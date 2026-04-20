@@ -29,7 +29,15 @@ app.use('/api/assets', require('./routes/assets'));
 app.use('/api/customers', require('./routes/customers'));
 
 // Health check
-app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
+app.get('/api/health', async (req, res) => {
+  try {
+    const pool = require('./config/db');
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok', db: 'connected', timestamp: new Date() });
+  } catch (err) {
+    res.status(500).json({ status: 'ok', db: 'disconnected', error: err.message });
+  }
+});
 
 // Error handler
 app.use((err, req, res, next) => {
