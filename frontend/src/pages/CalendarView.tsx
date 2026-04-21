@@ -14,7 +14,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Video } from "lucide-react";
 import { api } from "@/lib/api";
 
 interface Meeting {
@@ -69,7 +69,41 @@ const CalendarView = () => {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Form>(empty);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [meetLink, setMeetLink] = useState("");
+
+  useQuery({
+    queryKey: ["google-status"],
+    queryFn: () => api.get<{ connected: boolean }>("/google/status"),
+    onSuccess: (data) => setGoogleConnected(data.connected),
+  });
+
+  const connectGoogle = async () => {
+    const { url } = await api.get<{ url: string }>("/google/auth");
+    window.open(url, "_blank", "width=600,height=700");
+  };
+
+  const generateMeet = async () => {
+    if (!googleConnected) {
+      toast({ title: "Connect Google first", description: "Click 'Connect Google' button", variant: "destructive" });
+      return;
+    }
+    try {
+      const start = new Date(`${form.date}T${form.time}:00`);
+      const end = new Date(start.getTime() + 60 * 60 * 1000); // 1 hour later
+      const { meetLink: link } = await api.post<{ meetLink: string }>("/google/create-meet", {
+        title: form.title || "CRM Meeting",
+        description: "",
+        start: start.toISOString(),
+        end: end.toISOString(),
+        attendees: form.attendees.split(",").map((a) => a.trim()).filter(Boolean),
+      });
+      setMeetLink(link);
+      toast({ title: "Meet link generated", description: link });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
 
   const selectedDateStr = date ? toDateStr(date) : "";
   const todayMeetings = useMemo(() => meetings.filter((m) => m.date === selectedDateStr), [meetings, selectedDateStr]);
@@ -78,12 +112,14 @@ const CalendarView = () => {
   const openAdd = () => {
     setEditingId(null);
     setForm({ ...empty, date: selectedDateStr || toDateStr(new Date()) });
+    setMeetLink("");
     setEditorOpen(true);
   };
 
   const openEdit = (m: Meeting) => {
     setEditingId(m.id);
     setForm({ title: m.title, date: m.date, time: m.time, attendees: m.attendees.join(", ") });
+    setMeetLink("");
     setEditorOpen(true);
   };
 
@@ -213,8 +249,28 @@ const CalendarView = () => {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="m-att">Attendees (comma separated)</Label>
-              <Input id="m-att" value={form.attendees} onChange={(e) => setForm({ ...form, attendees: e.target.value })} placeholder="John, Emma" />
+              <Input id="m-att" value={form.attendees} onChange={(e) => setForm({ ...form, attendees: e.target.value })} placeholder="john@example.com, emma@example.com" />
             </div>
+            {!googleConnected && (
+              <Button type="button" variant="outline" onClick={connectGoogle} className="w-full">
+                <Video className="mr-2 h-4 w-4" /> Connect Google to generate Meet links
+              </Button>
+            )}
+            {googleConnected && (
+              <div className="space-y-2">
+                <Button type="button" variant="outline" onClick={generateMeet} className="w-full">
+                  <Video className="mr-2 h-4 w-4" /> Generate Google Meet Link
+                </Button>
+                {meetLink && (
+                  <div className="rounded-md bg-muted p-3">
+                    <p className="text-xs text-muted-foreground mb-1">Meet link:</p>
+                    <a href={meetLink} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline break-all">
+                      {meetLink}
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditorOpen(false)}>Cancel</Button>
