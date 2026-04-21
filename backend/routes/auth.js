@@ -48,13 +48,13 @@ router.post('/register', authenticate, requireRole('admin'), async (req, res) =>
     const [roleRow] = await pool.query('SELECT id FROM roles WHERE name = ?', [role || 'staff']);
     await pool.query('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)', [userId, roleRow[0].id]);
 
-    if (role === 'staff') {
+    if (role === 'staff' || !role) {
       const modules = ['leads','tasks','projects','calendar','credits','social_media','seo'];
       for (const mod of modules) {
         await pool.query('INSERT INTO staff_permissions (user_id, module, has_access) VALUES (?, ?, TRUE)', [userId, mod]);
       }
-      await pool.query('INSERT INTO staff_credits (user_id, points, credits) VALUES (?, 0, 0)', [userId]);
     }
+    await pool.query('INSERT INTO staff_credits (user_id, points, credits) VALUES (?, 0, 0)', [userId]);
 
     await logActivity(req.user.id, 'create_user', 'auth', `Created user: ${email}`, req.ip);
     res.status(201).json({ id: userId, email, name, role: role || 'staff' });
@@ -118,8 +118,12 @@ router.put('/users/:id/permissions', authenticate, requireRole('admin'), async (
 router.get('/users', authenticate, requireRole('admin'), async (req, res) => {
   try {
     const [users] = await pool.query(
-      `SELECT u.id, u.email, u.name, u.phone, u.is_active, u.created_at, r.name as role
-       FROM users u JOIN user_roles ur ON u.id = ur.user_id JOIN roles r ON ur.role_id = r.id`
+      `SELECT u.id, u.email, u.name, u.phone, u.is_active, u.created_at, r.name as role,
+       COALESCE(sc.credits, 0) as credits, COALESCE(sc.points, 0) as points
+       FROM users u 
+       JOIN user_roles ur ON u.id = ur.user_id 
+       JOIN roles r ON ur.role_id = r.id
+       LEFT JOIN staff_credits sc ON u.id = sc.user_id`
     );
     const [perms] = await pool.query('SELECT user_id, module, has_access FROM staff_permissions');
     const result = users.map((u) => ({

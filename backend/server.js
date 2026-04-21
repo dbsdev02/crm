@@ -27,6 +27,7 @@ app.use('/api/social-media', require('./routes/social-media'));
 app.use('/api/seo', require('./routes/seo'));
 app.use('/api/assets', require('./routes/assets'));
 app.use('/api/customers', require('./routes/customers'));
+app.use('/api/google', require('./routes/google'));
 
 // Health check
 app.get('/api/health', async (req, res) => {
