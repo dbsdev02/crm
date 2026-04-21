@@ -69,14 +69,14 @@ const CalendarView = () => {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<Form>(empty);
-  const [googleConnected, setGoogleConnected] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [meetLink, setMeetLink] = useState("");
 
-  useQuery({
+  const { data: googleStatus } = useQuery({
     queryKey: ["google-status"],
     queryFn: () => api.get<{ connected: boolean }>("/google/status"),
-    onSuccess: (data) => setGoogleConnected(data.connected),
   });
+  const googleConnected = googleStatus?.connected ?? false;
 
   const connectGoogle = async () => {
     const { url } = await api.get<{ url: string }>("/google/auth");
