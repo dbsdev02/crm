@@ -72,11 +72,12 @@ const CalendarView = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [meetLink, setMeetLink] = useState("");
 
-  const { data: googleStatus } = useQuery({
+  const { data: googleStatus, isError: googleError } = useQuery({
     queryKey: ["google-status"],
     queryFn: () => api.get<{ connected: boolean }>("/google/status"),
+    retry: false,
   });
-  const googleConnected = googleStatus?.connected ?? false;
+  const googleConnected = googleStatus?.connected === true;
 
   const connectGoogle = async () => {
     const { url } = await api.get<{ url: string }>("/google/auth");
@@ -253,7 +254,8 @@ const CalendarView = () => {
             </div>
             {!googleConnected && (
               <Button type="button" variant="outline" onClick={connectGoogle} className="w-full">
-                <Video className="mr-2 h-4 w-4" /> Connect Google to generate Meet links
+                <Video className="mr-2 h-4 w-4" />
+                {googleError ? "Connect Google (required for Meet links)" : "Connect Google to generate Meet links"}
               </Button>
             )}
             {googleConnected && (
