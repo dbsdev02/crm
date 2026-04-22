@@ -34,7 +34,7 @@ const defaultBuiltIn: BuiltInFieldConfig[] = [
   { key: "company", label: "Company", enabled: true, required: true },
   { key: "email", label: "Email", enabled: true, required: false },
   { key: "phone", label: "Phone", enabled: true, required: false },
-  { key: "value", label: "Value ($)", enabled: true, required: false },
+  { key: "value", label: "Value (₹)", enabled: true, required: false },
   { key: "stage", label: "Stage", enabled: true, required: true, locked: true },
 ];
 

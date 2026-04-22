@@ -345,7 +345,7 @@ const Leads = () => {
           <DialogHeader>
             <DialogTitle>{editingId ? "Edit Lead" : "Add New Lead"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto px-[3px] py-[3px]">
             <div className="grid grid-cols-2 gap-3">
               {builtIn.filter((f) => f.enabled).map((f) => {
                 const star = f.required ? " *" : "";
@@ -364,15 +364,27 @@ const Leads = () => {
                     </div>
                   );
                 }
-                const inputType = f.key === "email" ? "email" : f.key === "value" ? "number" : "text";
+                const inputType = f.key === "email" ? "email" : f.key === "value" ? "number" : f.key === "phone" ? "tel" : "text";
+                const placeholders: Record<string, string> = {
+                  name: "e.g. Rahul Sharma",
+                  email: "e.g. rahul@example.com",
+                  phone: "e.g. +91 98765 43210",
+                  company: "e.g. Tata Consultancy",
+                  value: "e.g. 50000",
+                };
                 return (
                   <div key={f.key} className="space-y-1.5">
                     <Label htmlFor={`lead-${f.key}`}>{f.label}{star}</Label>
                     <Input
                       id={`lead-${f.key}`}
                       type={inputType}
+                      inputMode={f.key === "phone" ? "numeric" : undefined}
+                      placeholder={placeholders[f.key] ?? ""}
                       value={(form as unknown as Record<string, string>)[f.key] ?? ""}
-                      onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
+                      onChange={(e) => {
+                        const val = f.key === "phone" ? e.target.value.replace(/[^0-9+\s\-()]/g, "") : e.target.value;
+                        setForm({ ...form, [f.key]: val });
+                      }}
                     />
                   </div>
                 );

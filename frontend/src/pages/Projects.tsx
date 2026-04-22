@@ -117,10 +117,11 @@ const Projects = () => {
       toast({ title: "Missing info", description: "Project name and client are required.", variant: "destructive" }); return;
     }
     const progress = Math.min(100, Math.max(0, Number(form.progress) || 0));
+    const statusToApi: Record<string, string> = { active: "in_progress", on_hold: "on_hold", completed: "completed" };
     saveMutation.mutate({
       name: form.name, description: form.description,
       client_name: form.clientName, client_email: form.clientEmail,
-      client_phone: form.clientPhone, status: form.status, progress,
+      client_phone: form.clientPhone, status: statusToApi[form.status] ?? form.status, progress,
     });
     setEditorOpen(false);
   };
@@ -209,15 +210,15 @@ const Projects = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="proj-client">Client Name *</Label>
-                <Input id="proj-client" value={form.clientName} onChange={(e) => setForm({ ...form, clientName: e.target.value })} />
+                <Input id="proj-client" placeholder="e.g. Rahul Sharma" value={form.clientName} onChange={(e) => setForm({ ...form, clientName: e.target.value })} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="proj-email">Client Email</Label>
-                <Input id="proj-email" type="email" value={form.clientEmail} onChange={(e) => setForm({ ...form, clientEmail: e.target.value })} />
+                <Input id="proj-email" type="email" placeholder="e.g. rahul@example.com" value={form.clientEmail} onChange={(e) => setForm({ ...form, clientEmail: e.target.value })} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="proj-phone">Client Phone</Label>
-                <Input id="proj-phone" value={form.clientPhone} onChange={(e) => setForm({ ...form, clientPhone: e.target.value })} />
+                <Input id="proj-phone" type="tel" inputMode="numeric" placeholder="e.g. +91 98765 43210" value={form.clientPhone} onChange={(e) => setForm({ ...form, clientPhone: e.target.value.replace(/[^0-9+\s\-()]/g, "") })} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="proj-progress">Progress (%)</Label>

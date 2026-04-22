@@ -65,6 +65,11 @@ const priorityMeta: Record<
 };
 
 const todayStr = () => new Date().toISOString().split("T")[0];
+const nowDateTimeLocal = () => {
+  const d = new Date();
+  d.setSeconds(0, 0);
+  return d.toISOString().slice(0, 16);
+};
 const isOverdue = (deadline: string, status: Task["status"]) =>
   status !== "completed" && new Date(deadline) < new Date(todayStr());
 
@@ -92,7 +97,7 @@ interface TaskFormState {
 const emptyForm = (): TaskFormState => ({
   title: "",
   description: "",
-  deadline: todayStr(),
+  deadline: nowDateTimeLocal(),
   priority: "medium",
   projectId: "none",
   customerId: "none",
@@ -109,7 +114,7 @@ const Tasks = () => {
     assignedTo: [String(t.assigned_to || "")],
     projectId: t.project_id ? String(t.project_id) : undefined,
     customerId: t.customer_id ? String(t.customer_id) : undefined,
-    deadline: t.due_date?.split("T")[0] || "",
+    deadline: t.due_date ? t.due_date.slice(0, 16) : "",
     completedAt: t.completed_at || undefined,
     status: t.status, priority: t.priority, createdBy: String(t.assigned_by || ""),
   }));
@@ -201,7 +206,7 @@ const Tasks = () => {
     setForm({
       title: task.title,
       description: task.description,
-      deadline: task.deadline,
+      deadline: task.deadline.length === 10 ? task.deadline + "T00:00" : task.deadline,
       priority: task.priority,
       projectId: task.projectId ?? "none",
       customerId: task.customerId ?? "none",
@@ -333,10 +338,10 @@ const Tasks = () => {
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                   />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Due date</label>
+                    <div className="sm:col-span-2">
+                      <label className="text-xs text-muted-foreground mb-1 block">Due date & time</label>
                       <Input
-                        type="date"
+                        type="datetime-local"
                         value={form.deadline}
                         onChange={(e) => setForm({ ...form, deadline: e.target.value })}
                       />
@@ -535,6 +540,11 @@ const Tasks = () => {
                           >
                             <Clock className="h-3 w-3" />
                             {formatDate(task.deadline)}
+                            {task.deadline.length > 10 && (
+                              <span className="ml-0.5">
+                                {new Date(task.deadline).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                              </span>
+                            )}
                           </span>
                           <Badge variant="outline" className={cn("text-xs gap-1", meta.badge)}>
                             <Flag className={cn("h-3 w-3", meta.flag)} />
