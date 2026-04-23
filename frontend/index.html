@@ -10,6 +10,19 @@
     <meta property="og:title" content="CRM" />
     <meta property="og:description" content="CRM System" />
     <meta property="og:type" content="website" />
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "d37091a4-d5b0-44db-a930-b0792edd8667",
+          allowLocalhostAsSecureOrigin: true,
+          serviceWorkerPath: "/OneSignalSDKWorker.js",
+          serviceWorkerParam: { scope: "/" },
+        });
+        window._oneSignalReady = true;
+      });
+    </script>
   </head>
 
   <body>

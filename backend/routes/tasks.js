@@ -62,10 +62,31 @@ router.put('/:id/complete', async (req, res) => {
     await pool.query('UPDATE tasks SET status = ?, completed_at = ? WHERE id = ?',
       ['completed', completedAt, req.params.id]);
 
+    const task = tasks[0];
     let creditResult = null;
-    if (tasks[0].assigned_to && tasks[0].due_date) {
-      creditResult = await updateCredits(tasks[0].assigned_to, tasks[0].id, tasks[0].due_date, completedAt);
+    if (task.assigned_to && task.due_date) {
+      creditResult = await updateCredits(task.assigned_to, task.id, task.due_date, completedAt);
     }
+
+    // Notify the person who assigned the task
+    if (task.assigned_by && task.assigned_by !== req.user.id) {
+      await createNotification(
+        task.assigned_by,
+        'Task Completed',
+        `Task "${task.title}" has been completed`,
+        'task', task.id, 'task'
+      );
+    }
+    // Notify the assignee if completed by someone else
+    if (task.assigned_to && task.assigned_to !== req.user.id) {
+      await createNotification(
+        task.assigned_to,
+        'Task Completed',
+        `Task "${task.title}" has been marked as completed`,
+        'task', task.id, 'task'
+      );
+    }
+
     await logActivity(req.user.id, 'complete_task', 'tasks', `Completed task ${req.params.id}`, req.ip);
     res.json({ success: true, credits: creditResult });
   } catch (err) {
@@ -76,10 +97,25 @@ router.put('/:id/complete', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { title, description, project_id, assigned_to, priority, due_date, status } = req.body;
+    const [tasks] = await pool.query('SELECT * FROM tasks WHERE id = ?', [req.params.id]);
+    if (!tasks.length) return res.status(404).json({ error: 'Task not found' });
+    const task = tasks[0];
+
     await pool.query(
       'UPDATE tasks SET title=?, description=?, project_id=?, assigned_to=?, priority=?, due_date=?, status=? WHERE id=?',
       [title, description, project_id, assigned_to, priority, due_date, status, req.params.id]
     );
+
+    // Notify new assignee if assignment changed
+    if (assigned_to && assigned_to !== task.assigned_to && assigned_to !== req.user.id) {
+      await createNotification(
+        assigned_to,
+        'Task Assigned',
+        `Task "${title}" has been assigned to you`,
+        'task', req.params.id, 'task'
+      );
+    }
+
     await logActivity(req.user.id, 'update_task', 'tasks', `Updated task ${req.params.id}`, req.ip);
     res.json({ success: true });
   } catch (err) {

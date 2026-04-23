@@ -28,6 +28,7 @@ app.use('/api/seo', require('./routes/seo'));
 app.use('/api/assets', require('./routes/assets'));
 app.use('/api/customers', require('./routes/customers'));
 app.use('/api/google', require('./routes/google'));
+app.use('/api/push', require('./routes/push'));
 
 // Health check
 app.get('/api/health', async (req, res) => {

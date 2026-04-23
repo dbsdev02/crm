@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { usePushNotification } from "@/hooks/use-push-notification";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,37 @@ import { api } from "@/lib/api";
 import { Announcement } from "@/data/mockData";
 import { useLeadFields, FieldType } from "@/contexts/LeadFieldsContext";
 import { toast } from "@/hooks/use-toast";
+
+const PushNotificationCard = () => {
+  const { isSupported, isSubscribed, loading, requestAndSubscribe, unsubscribe } = usePushNotification();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Browser push notifications</CardTitle>
+        <CardDescription>Get notified in real-time even when the CRM tab is in the background.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {!isSupported ? (
+          <p className="text-sm text-muted-foreground">Your browser does not support push notifications.</p>
+        ) : (
+          <div className="flex items-center justify-between rounded-md border border-border p-3">
+            <div>
+              <Label>Push notifications</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {loading ? "Processing..." : isSubscribed ? "You will receive browser push notifications." : "Enable to receive browser push notifications."}
+              </p>
+            </div>
+            <Switch
+              checked={isSubscribed}
+              disabled={loading}
+              onCheckedChange={(v) => v ? requestAndSubscribe() : unsubscribe()}
+            />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 const Settings = () => {
   // Company
@@ -301,7 +333,8 @@ const Settings = () => {
         </TabsContent>
 
 
-        <TabsContent value="notifications" className="mt-4">
+        <TabsContent value="notifications" className="mt-4 space-y-4">
+          <PushNotificationCard />
           <Card>
             <CardHeader>
               <CardTitle>Notification preferences</CardTitle>
