@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 5000;
 // CORS: Allow web frontend + Capacitor Android app
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:8080',
+  'https://internal.ltd',
   'capacitor://localhost', // Capacitor Android
   'https://localhost'      // Capacitor iOS
 ];

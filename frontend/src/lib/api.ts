@@ -1,7 +1,5 @@
-// In the APK there is no Vite proxy, so we need the real backend URL.
-// Set VITE_API_URL in .env for web dev (leave empty = use proxy).
-// For the APK build set it in frontend/.env: VITE_API_URL=http://<your-server-ip>:5000
-const BASE = `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api`;
+// Updated for new API URL: https://internal.ltd/backend
+const BASE = "https://internal.ltd/backend/api";
 
 function getToken() {
   return localStorage.getItem("crm_token");
