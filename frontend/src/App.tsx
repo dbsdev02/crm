@@ -21,6 +21,7 @@ import Credits from "@/pages/Credits";
 import Settings from "@/pages/Settings";
 import PlaceholderPage from "@/pages/PlaceholderPage";
 import NotFound from "@/pages/NotFound";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
             <BrowserRouter>
               <Routes>
                 <Route path="/login" element={<Login />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/" element={<ProtectedLayout><Index /></ProtectedLayout>} />
                 <Route path="/leads" element={<ProtectedLayout allowedRoles={["admin", "staff"]}><Leads /></ProtectedLayout>} />
                 <Route path="/customers" element={<ProtectedLayout allowedRoles={["admin", "staff"]}><Customers /></ProtectedLayout>} />
