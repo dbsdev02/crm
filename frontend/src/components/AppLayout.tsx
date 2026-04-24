@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { Bell, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -103,13 +104,18 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <AppSidebar />
+        {/* Sidebar — desktop only */}
+        <div className="hidden md:block">
+          <AppSidebar />
+        </div>
         <div className="flex-1 flex flex-col min-w-0">
           <AnnouncementBanner />
           <header className="h-14 flex items-center justify-between border-b border-border px-4 bg-card">
             <div className="flex items-center gap-2">
-              <SidebarTrigger />
-              <h2 className="text-sm font-medium text-muted-foreground hidden sm:block">
+              <div className="hidden md:block">
+                <SidebarTrigger />
+              </div>
+              <h2 className="text-sm font-semibold text-foreground md:font-medium md:text-muted-foreground">
                 Welcome, {user?.name}
               </h2>
             </div>
@@ -117,9 +123,11 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
               <NotificationBell />
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
+          <main className="flex-1 overflow-auto p-4 md:p-6 pb-20 md:pb-6">{children}</main>
         </div>
       </div>
+      {/* Bottom nav — mobile only */}
+      <MobileBottomNav />
     </SidebarProvider>
   );
 };

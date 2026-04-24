@@ -6,10 +6,25 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// CORS: Allow web frontend + Capacitor Android app
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:8080',
+  'capacitor://localhost', // Capacitor Android
+  'https://localhost'      // Capacitor iOS
+];
+
 app.use(cors({ 
-  origin: process.env.FRONTEND_URL || 'http://localhost:8080', 
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, curl)
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true 
 }));
+
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 

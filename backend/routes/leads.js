@@ -53,15 +53,25 @@ router.put('/:id/stage', async (req, res) => {
     if (!comment || !comment.trim()) {
       return res.status(400).json({ error: 'Comment is mandatory when changing lead stage' });
     }
-    const [leads] = await pool.query('SELECT stage FROM leads WHERE id = ?', [req.params.id]);
+    const [leads] = await pool.query('SELECT * FROM leads WHERE id = ?', [req.params.id]);
     if (!leads.length) return res.status(404).json({ error: 'Lead not found' });
+    const lead = leads[0];
 
     await pool.query('UPDATE leads SET stage = ? WHERE id = ?', [stage, req.params.id]);
     await pool.query(
       'INSERT INTO lead_stage_history (lead_id, from_stage, to_stage, comment, changed_by) VALUES (?, ?, ?, ?, ?)',
-      [req.params.id, leads[0].stage, stage, comment, req.user.id]
+      [req.params.id, lead.stage, stage, comment, req.user.id]
     );
-    await logActivity(req.user.id, 'change_lead_stage', 'leads', `Lead ${req.params.id}: ${leads[0].stage} → ${stage}`, req.ip);
+    // Notify assigned staff about stage change
+    if (lead.assigned_to && lead.assigned_to !== req.user.id) {
+      await createNotification(
+        lead.assigned_to,
+        'Lead Stage Updated',
+        `Lead "${lead.name}" moved to ${stage.replace(/_/g, ' ')}`,
+        'lead', req.params.id, 'lead'
+      );
+    }
+    await logActivity(req.user.id, 'change_lead_stage', 'leads', `Lead ${req.params.id}: ${lead.stage} → ${stage}`, req.ip);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -71,10 +81,23 @@ router.put('/:id/stage', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { name, email, phone, company, source, value, assigned_to, notes } = req.body;
+    const [leads] = await pool.query('SELECT * FROM leads WHERE id = ?', [req.params.id]);
+    if (!leads.length) return res.status(404).json({ error: 'Lead not found' });
+    const lead = leads[0];
+
     await pool.query(
       'UPDATE leads SET name=?, email=?, phone=?, company=?, source=?, value=?, assigned_to=?, notes=? WHERE id=?',
       [name, email, phone, company, source, value, assigned_to, notes, req.params.id]
     );
+    // Notify new assignee if changed
+    if (assigned_to && assigned_to !== lead.assigned_to && assigned_to !== req.user.id) {
+      await createNotification(
+        assigned_to,
+        'Lead Assigned',
+        `Lead "${name}" has been assigned to you`,
+        'lead', req.params.id, 'lead'
+      );
+    }
     await logActivity(req.user.id, 'update_lead', 'leads', `Updated lead ${req.params.id}`, req.ip);
     res.json({ success: true });
   } catch (err) {

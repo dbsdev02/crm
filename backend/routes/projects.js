@@ -2,6 +2,7 @@ const express = require('express');
 const pool = require('../config/db');
 const { authenticate, requireModule } = require('../middleware/auth');
 const { logActivity } = require('../utils/logger');
+const { createNotification } = require('../utils/notifications');
 const router = express.Router();
 
 router.use(authenticate, requireModule('projects'));
@@ -32,8 +33,11 @@ router.post('/', async (req, res) => {
       [name, description, client_name, client_email, client_phone, start_date || null, end_date || null, toDbStatus(req.body.status), req.user.id]
     );
     if (members && members.length) {
-      for (const uid of members)
+      for (const uid of members) {
         await pool.query('INSERT INTO project_members (project_id, user_id) VALUES (?, ?)', [result.insertId, uid]);
+        if (uid !== req.user.id)
+          await createNotification(uid, 'Added to Project', `You have been added to project "${name}"`, 'project', result.insertId, 'project');
+      }
     }
     await logActivity(req.user.id, 'create_project', 'projects', `Created project: ${name}`, req.ip);
     res.status(201).json({ id: result.insertId });

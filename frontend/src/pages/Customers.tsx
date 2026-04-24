@@ -159,7 +159,8 @@ const Customers = () => {
             </Select>
           </div>
 
-          <div className="rounded-md border border-border overflow-x-auto">
+          {/* Desktop table */}
+          <div className="hidden md:block rounded-md border border-border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -174,9 +175,7 @@ const Customers = () => {
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
-                      No customers found.
-                    </TableCell>
+                    <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">No customers found.</TableCell>
                   </TableRow>
                 ) : filtered.map((c) => (
                   <TableRow key={c.id}>
@@ -188,22 +187,37 @@ const Customers = () => {
                         {c.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{c.phone}</span>}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={statusVariant[c.status]}>{c.status}</Badge>
-                    </TableCell>
+                    <TableCell><Badge variant="outline" className={statusVariant[c.status]}>{c.status}</Badge></TableCell>
                     <TableCell className="text-sm text-muted-foreground">{c.createdAt}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(c.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(c.id)}><Trash2 className="h-4 w-4" /></Button>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Mobile card list */}
+          <div className="md:hidden space-y-2">
+            {filtered.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground py-8">No customers found.</p>
+            ) : filtered.map((c) => (
+              <div key={c.id} className="flex items-start justify-between rounded-lg border border-border p-3 gap-2">
+                <div className="min-w-0 space-y-0.5">
+                  <p className="font-medium text-sm truncate">{c.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{c.company}</p>
+                  {c.email && <p className="text-xs text-muted-foreground flex items-center gap-1"><Mail className="h-3 w-3" />{c.email}</p>}
+                  {c.phone && <p className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" />{c.phone}</p>}
+                  <Badge variant="outline" className={`${statusVariant[c.status]} text-[10px] mt-1`}>{c.status}</Badge>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(c.id)}><Trash2 className="h-4 w-4" /></Button>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
