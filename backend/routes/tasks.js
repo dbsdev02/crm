@@ -31,10 +31,11 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { title, description, project_id, assigned_to, priority, due_date, assignees } = req.body;
+    const { title, description, project_id, assigned_to, priority, due_date, assignees, labels } = req.body;
+    const labelsStr = Array.isArray(labels) && labels.length ? labels.join(',') : null;
     const [result] = await pool.query(
-      'INSERT INTO tasks (title, description, project_id, assigned_to, assigned_by, priority, due_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [title, description, project_id, assigned_to, req.user.id, priority || 'medium', due_date]
+      'INSERT INTO tasks (title, description, project_id, assigned_to, assigned_by, priority, due_date, labels) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [title, description, project_id, assigned_to, req.user.id, priority || 'medium', due_date, labelsStr]
     );
     const taskId = result.insertId;
     if (assignees && assignees.length) {
@@ -96,14 +97,15 @@ router.put('/:id/complete', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { title, description, project_id, assigned_to, priority, due_date, status } = req.body;
+    const { title, description, project_id, assigned_to, priority, due_date, status, labels } = req.body;
+    const labelsStr = Array.isArray(labels) && labels.length ? labels.join(',') : null;
     const [tasks] = await pool.query('SELECT * FROM tasks WHERE id = ?', [req.params.id]);
     if (!tasks.length) return res.status(404).json({ error: 'Task not found' });
     const task = tasks[0];
 
     await pool.query(
-      'UPDATE tasks SET title=?, description=?, project_id=?, assigned_to=?, priority=?, due_date=?, status=? WHERE id=?',
-      [title, description, project_id, assigned_to, priority, due_date, status, req.params.id]
+      'UPDATE tasks SET title=?, description=?, project_id=?, assigned_to=?, priority=?, due_date=?, status=?, labels=? WHERE id=?',
+      [title, description, project_id, assigned_to, priority, due_date, status, labelsStr, req.params.id]
     );
 
     // Notify new assignee if assignment changed

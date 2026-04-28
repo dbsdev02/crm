@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CustomersProvider } from "@/contexts/CustomersContext";
 import { LeadFieldsProvider } from "@/contexts/LeadFieldsContext";
+import { LabelsProvider } from "@/contexts/LabelsContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
 import Login from "@/pages/Login";
@@ -38,7 +39,8 @@ const App = () => (
       <Sonner />
       <AuthProvider>
         <LeadFieldsProvider>
-          <CustomersProvider>
+          <LabelsProvider>
+            <CustomersProvider>
             <BrowserRouter>
               <Routes>
                 <Route path="/login" element={<Login />} />
@@ -59,7 +61,8 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
-          </CustomersProvider>
+            </CustomersProvider>
+          </LabelsProvider>
         </LeadFieldsProvider>
       </AuthProvider>
     </TooltipProvider>

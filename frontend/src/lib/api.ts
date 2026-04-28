@@ -1,5 +1,4 @@
-// Updated for new API URL: https://internal.ltd/backend
-const BASE = "https://internal.ltd/backend/api";
+const BASE = import.meta.env.PROD ? "https://internal.ltd/backend/api" : "/api";
 
 function getToken() {
   return localStorage.getItem("crm_token");

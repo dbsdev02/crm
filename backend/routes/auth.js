@@ -115,6 +115,20 @@ router.put('/users/:id/permissions', authenticate, requireRole('admin'), async (
   }
 });
 
+router.get('/staff-list', authenticate, async (req, res) => {
+  try {
+    const [users] = await pool.query(
+      `SELECT u.id, u.name, r.name as role FROM users u
+       JOIN user_roles ur ON u.id = ur.user_id
+       JOIN roles r ON ur.role_id = r.id
+       WHERE u.is_active = TRUE ORDER BY u.name ASC`
+    );
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/users', authenticate, requireRole('admin'), async (req, res) => {
   try {
     const [users] = await pool.query(
