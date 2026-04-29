@@ -52,6 +52,11 @@ const StaffManagement = () => {
       api.put(`/auth/users/${id}/permissions`, { permissions }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["users"] }); toast({ title: "Permissions saved" }); setEditingStaff(null); },
   });
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/auth/users/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["users"] }); toast({ title: "Staff removed" }); },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
   const creditMutation = useMutation({
     mutationFn: ({ id, delta, reason }: { id: string; delta: number; reason: string }) =>
       api.put(`/auth/users/${id}`, { credits_delta: delta, points_delta: delta, credit_reason: reason }),
@@ -105,7 +110,7 @@ const StaffManagement = () => {
 
   const deleteStaff = () => {
     if (!deletingId) return;
-    updateMutation.mutate({ id: deletingId, payload: { is_active: false } });
+    deleteMutation.mutate(deletingId);
     setDeletingId(null);
   };
 

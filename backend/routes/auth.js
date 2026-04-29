@@ -129,6 +129,20 @@ router.get('/staff-list', authenticate, async (req, res) => {
   }
 });
 
+router.delete('/users/:id', authenticate, requireRole('admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM staff_permissions WHERE user_id = ?', [id]);
+    await pool.query('DELETE FROM staff_credits WHERE user_id = ?', [id]);
+    await pool.query('DELETE FROM user_roles WHERE user_id = ?', [id]);
+    await pool.query('DELETE FROM users WHERE id = ?', [id]);
+    await logActivity(req.user.id, 'delete_user', 'auth', `Deleted user ${id}`, req.ip);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/users', authenticate, requireRole('admin'), async (req, res) => {
   try {
     const [users] = await pool.query(

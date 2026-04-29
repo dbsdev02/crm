@@ -48,11 +48,11 @@ const labelColor = (l: string) => LABEL_COLORS[l.toLowerCase()] ?? "bg-gray-100 
 interface TaskFormState {
   title: string; description: string; deadline: string;
   priority: Task["priority"]; projectId: string; customerId: string;
-  assignedTo: string; labels: string[];
+  labels: string[];
 }
 const emptyForm = (): TaskFormState => ({
   title: "", description: "", deadline: nowDateTimeLocal(),
-  priority: "medium", projectId: "none", customerId: "none", assignedTo: "none", labels: [],
+  priority: "medium", projectId: "none", customerId: "none", labels: [],
 });
 
 const Tasks = () => {
@@ -74,6 +74,9 @@ const Tasks = () => {
     projectId: t.project_id ? String(t.project_id) : undefined,
     deadline: t.due_date ? t.due_date.slice(0, 16) : "",
     status: t.status, priority: t.priority as Task["priority"],
+    // Parse @mentions from description to show assignee avatars
+    mentionedNames: (t.description || "").match(/@([\w ]+?)(?=\s@|\s*$|[.,!?])/g)
+      ?.map((m: string) => m.slice(1).trim()) ?? [],
   }));
 
   const [view, setView] = useState<View>("today");
@@ -118,12 +121,33 @@ const Tasks = () => {
   const openCreate = () => { setEditingId(null); setForm(emptyForm()); setDialogOpen(true); };
   const openEdit = (task: any) => {
     setEditingId(task.id);
-    setForm({ title: task.title, description: task.description, deadline: task.deadline.length === 10 ? task.deadline + "T00:00" : task.deadline, priority: task.priority, projectId: task.projectId ?? "none", customerId: "none", assignedTo: task.assignedTo ? String(task.assignedTo) : "none", labels: task.labels ?? [] });
+    setForm({ title: task.title, description: task.description, deadline: task.deadline.length === 10 ? task.deadline + "T00:00" : task.deadline, priority: task.priority, projectId: task.projectId ?? "none", customerId: "none", labels: task.labels ?? [] });
     setDialogOpen(true);
   };
+
+  // Extract user IDs from @mentions in description
+  const extractAssignees = (description: string): number[] => {
+    const mentioned = description.match(/@([\w\s]+?)(?=\s@|\s*$|[^\w\s])/g) ?? [];
+    const names = mentioned.map((m) => m.slice(1).trim());
+    return allUsers
+      .filter((u: any) => names.some((n) => n.toLowerCase() === u.name.toLowerCase()))
+      .map((u: any) => Number(u.id));
+  };
+
   const submitForm = () => {
     if (!form.title.trim()) { toast({ title: "Title required", variant: "destructive" }); return; }
-    saveMutation.mutate({ title: form.title.trim(), description: form.description.trim(), due_date: form.deadline, priority: form.priority, project_id: form.projectId === "none" ? null : form.projectId, assigned_to: form.assignedTo === "none" ? null : Number(form.assignedTo), labels: form.labels, ...(editingId ? { status: "pending" } : {}) });
+    const assignees = extractAssignees(form.description);
+    saveMutation.mutate({
+      title: form.title.trim(),
+      description: form.description.trim(),
+      due_date: form.deadline,
+      priority: form.priority,
+      project_id: form.projectId === "none" ? null : form.projectId,
+      assignees,
+      assigned_to: assignees[0] ?? null,
+      labels: form.labels,
+      ...(editingId ? { status: "pending" } : {}),
+    });
   };
 
   const viewTabs: { key: View; label: string; count: number }[] = [
@@ -207,8 +231,22 @@ const Tasks = () => {
               const cardColor = completed ? "bg-muted" : overdue ? "bg-[#FFD6C8]" : CARD_COLORS[i % CARD_COLORS.length];
               return (
                 <div key={task.id} className={cn("rounded-2xl p-4 flex items-start gap-3", cardColor)}>
-                  <div className="h-9 w-9 rounded-full bg-white/60 flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">
-                    {initials(task.assignedToName)}
+                  {/* Assignee avatars from @mentions */}
+                  <div className="flex -space-x-2 shrink-0">
+                    {task.mentionedNames.length > 0 ? task.mentionedNames.slice(0, 3).map((name: string, idx: number) => (
+                      <div key={idx} className="h-9 w-9 rounded-full bg-white/60 border-2 border-white flex items-center justify-center text-xs font-bold shadow-sm">
+                        {initials(name)}
+                      </div>
+                    )) : (
+                      <div className="h-9 w-9 rounded-full bg-white/60 flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">
+                        {initials(task.assignedToName)}
+                      </div>
+                    )}
+                    {task.mentionedNames.length > 3 && (
+                      <div className="h-9 w-9 rounded-full bg-white/60 border-2 border-white flex items-center justify-center text-xs font-bold shadow-sm">
+                        +{task.mentionedNames.length - 3}
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={cn("font-semibold text-sm leading-snug", completed && "line-through text-muted-foreground")}>
@@ -333,7 +371,6 @@ const Tasks = () => {
                     </button>
                   ))}
                 </div>
-                {/* Label dropdown */}
                 <Select
                   value=""
                   onValueChange={(v) => {
@@ -362,18 +399,6 @@ const Tasks = () => {
                     ))}
                   </div>
                 )}
-              </div>
-              <div className="sm:col-span-2">
-                <label className="text-xs text-muted-foreground mb-1 block">Assign to Staff</label>
-                <Select value={form.assignedTo} onValueChange={(v) => setForm({ ...form, assignedTo: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select staff" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Unassigned</SelectItem>
-                    {allUsers.map((u: any) => (
-                      <SelectItem key={u.id} value={String(u.id)}>{u.name} ({u.role})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
             </div>
           </div>

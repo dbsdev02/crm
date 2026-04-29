@@ -20,7 +20,8 @@ const Login = () => {
     const success = await login(email, password);
     if (success) {
       toast({ title: "Welcome back!", description: "You have been logged in successfully." });
-      navigate("/");
+      const user = JSON.parse(localStorage.getItem("crm_user") || "{}");
+      navigate(user.role === "staff" ? "/tasks" : "/");
     } else {
       toast({ title: "Login failed", description: "Invalid email or password.", variant: "destructive" });
     }
@@ -82,12 +83,7 @@ const Login = () => {
           </CardContent>
         </Card>
 
-        <div className="rounded-lg border border-border bg-muted/50 p-4 text-xs text-muted-foreground space-y-1">
-          <p className="font-medium text-foreground">Demo Credentials:</p>
-          <p>Admin: admin@crm.com / admin123</p>
-          <p>Staff: staff@crm.com / staff123</p>
-          <p>User: user@crm.com / user123</p>
-        </div>
+
       </div>
     </div>
   );

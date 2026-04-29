@@ -97,7 +97,7 @@ router.put('/:id/complete', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { title, description, project_id, assigned_to, priority, due_date, status, labels } = req.body;
+    const { title, description, project_id, assigned_to, priority, due_date, status, labels, assignees } = req.body;
     const labelsStr = Array.isArray(labels) && labels.length ? labels.join(',') : null;
     const [tasks] = await pool.query('SELECT * FROM tasks WHERE id = ?', [req.params.id]);
     if (!tasks.length) return res.status(404).json({ error: 'Task not found' });
@@ -107,6 +107,17 @@ router.put('/:id', async (req, res) => {
       'UPDATE tasks SET title=?, description=?, project_id=?, assigned_to=?, priority=?, due_date=?, status=?, labels=? WHERE id=?',
       [title, description, project_id, assigned_to, priority, due_date, status, labelsStr, req.params.id]
     );
+
+    // Sync assignees
+    if (assignees) {
+      await pool.query('DELETE FROM task_assignees WHERE task_id = ?', [req.params.id]);
+      for (const uid of assignees) {
+        await pool.query('INSERT INTO task_assignees (task_id, user_id) VALUES (?, ?)', [req.params.id, uid]);
+        if (uid !== req.user.id) {
+          await createNotification(uid, 'Task Assigned', `Task "${title}" has been assigned to you`, 'task', req.params.id, 'task');
+        }
+      }
+    }
 
     // Notify new assignee if assignment changed
     if (assigned_to && assigned_to !== task.assigned_to && assigned_to !== req.user.id) {
