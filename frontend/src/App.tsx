@@ -14,6 +14,7 @@ import Index from "@/pages/Index";
 import Leads from "@/pages/Leads";
 import Tasks from "@/pages/Tasks";
 import Projects from "@/pages/Projects";
+import ProjectDetails from "@/pages/ProjectDetails";
 import Customers from "@/pages/Customers";
 import StaffManagement from "@/pages/StaffManagement";
 import CalendarView from "@/pages/CalendarView";
@@ -50,6 +51,7 @@ const App = () => (
                 <Route path="/customers" element={<ProtectedLayout allowedRoles={["admin", "staff"]}><Customers /></ProtectedLayout>} />
                 <Route path="/tasks" element={<ProtectedLayout><Tasks /></ProtectedLayout>} />
                 <Route path="/projects" element={<ProtectedLayout><Projects /></ProtectedLayout>} />
+                <Route path="/projects/:id" element={<ProtectedLayout><ProjectDetails /></ProtectedLayout>} />
                 <Route path="/calendar" element={<ProtectedLayout><CalendarView /></ProtectedLayout>} />
                 <Route path="/staff" element={<ProtectedLayout allowedRoles={["admin"]}><StaffManagement /></ProtectedLayout>} />
                 <Route path="/logs" element={<ProtectedLayout allowedRoles={["admin"]}><Logs /></ProtectedLayout>} />

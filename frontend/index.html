@@ -16,13 +16,16 @@
     <meta property="og:type" content="website" />
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-          appId: "d37091a4-d5b0-44db-a930-b0792edd8667",
+      // Only init OneSignal on production — skip on localhost to avoid domain errors
+      if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(async function(OneSignal) {
+          await OneSignal.init({
+            appId: "d37091a4-d5b0-44db-a930-b0792edd8667",
+          });
+          window._oneSignalReady = true;
         });
-        window._oneSignalReady = true;
-      });
+      }
     </script>
   </head>
 

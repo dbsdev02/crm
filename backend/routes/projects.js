@@ -27,10 +27,10 @@ const toDbStatus = (s) => ({ active: 'in_progress', in_progress: 'in_progress', 
 
 router.post('/', async (req, res) => {
   try {
-    const { name, description, client_name, client_email, client_phone, start_date, end_date, members } = req.body;
+    const { name, description, client_name, client_email, client_phone, start_date, end_date, members, color } = req.body;
     const [result] = await pool.query(
-      'INSERT INTO projects (name, description, client_name, client_email, client_phone, start_date, end_date, status, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [name, description, client_name, client_email, client_phone, start_date || null, end_date || null, toDbStatus(req.body.status), req.user.id]
+      'INSERT INTO projects (name, description, client_name, client_email, client_phone, start_date, end_date, status, created_by, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, description, client_name, client_email, client_phone, start_date || null, end_date || null, toDbStatus(req.body.status), req.user.id, color || '#4073ff']
     );
     if (members && members.length) {
       for (const uid of members) {
@@ -64,10 +64,10 @@ router.get('/:id', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { name, description, client_name, client_email, client_phone, progress, start_date, end_date } = req.body;
+    const { name, description, client_name, client_email, client_phone, progress, start_date, end_date, color } = req.body;
     await pool.query(
-      'UPDATE projects SET name=?, description=?, client_name=?, client_email=?, client_phone=?, status=?, progress=?, start_date=?, end_date=? WHERE id=?',
-      [name, description, client_name, client_email, client_phone, toDbStatus(req.body.status), progress, start_date || null, end_date || null, req.params.id]
+      'UPDATE projects SET name=?, description=?, client_name=?, client_email=?, client_phone=?, status=?, progress=?, start_date=?, end_date=?, color=? WHERE id=?',
+      [name, description, client_name, client_email, client_phone, toDbStatus(req.body.status), progress, start_date || null, end_date || null, color || '#4073ff', req.params.id]
     );
     await logActivity(req.user.id, 'update_project', 'projects', `Updated project ${req.params.id}`, req.ip);
     res.json({ success: true });

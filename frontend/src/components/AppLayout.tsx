@@ -3,7 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { useAuth } from "@/contexts/AuthContext";
-import { Bell, Check, CheckCheck } from "lucide-react";
+import { Bell, Check, CheckCheck, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -23,7 +23,7 @@ const NotificationBell = () => {
 
   const { data: unreadData } = useQuery({
     queryKey: ["notifications-unread"],
-    queryFn: () => api.get<{ count: number}>("/notifications/unread-count"),
+    queryFn: () => api.get<{ count: number }>("/notifications/unread-count"),
     refetchInterval: 15000,
   });
 
@@ -48,47 +48,44 @@ const NotificationBell = () => {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <button className="relative p-2 rounded-lg hover:bg-[#f0f0f0] text-[#777] transition-colors">
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </Badge>
+            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-[#db4035]" />
           )}
-        </Button>
+        </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0">
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <h4 className="font-semibold text-sm">Notifications</h4>
+      <PopoverContent align="end" className="w-80 p-0 rounded-xl border border-[#e5e5e5] shadow-lg">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#f0f0f0]">
+          <h4 className="text-[14px] font-semibold text-[#202020]">Notifications</h4>
           {unreadCount > 0 && (
-            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => markAllRead.mutate()}>
+            <button
+              onClick={() => markAllRead.mutate()}
+              className="flex items-center gap-1 text-[12px] text-[#777] hover:text-[#202020] transition-colors"
+            >
               <CheckCheck className="h-3.5 w-3.5" /> Mark all read
-            </Button>
+            </button>
           )}
         </div>
-        <ScrollArea className="h-80">
-          {notifications.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No notifications</p>
+        <ScrollArea className="h-72">
+          {(notifications as any[]).length === 0 ? (
+            <p className="text-[13px] text-[#aaa] text-center py-8">No notifications</p>
           ) : (
-            notifications.map((n: any) => (
+            (notifications as any[]).map((n: any) => (
               <div
                 key={n.id}
                 className={cn(
-                  "flex items-start gap-3 px-4 py-3 border-b last:border-0 cursor-pointer hover:bg-muted/50 transition-colors",
-                  !n.is_read && "bg-primary/5"
+                  "flex items-start gap-3 px-4 py-3 border-b border-[#f5f5f5] last:border-0 cursor-pointer hover:bg-[#fafafa] transition-colors",
+                  !n.is_read && "bg-[#fef9f9]"
                 )}
                 onClick={() => !n.is_read && markRead.mutate(n.id)}
               >
                 <div className="flex-1 min-w-0">
-                  <p className={cn("text-sm", !n.is_read && "font-medium")}>{n.title}</p>
-                  {n.message && <p className="text-xs text-muted-foreground mt-0.5 truncate">{n.message}</p>}
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {new Date(n.created_at).toLocaleString()}
-                  </p>
+                  <p className={cn("text-[13px] text-[#202020]", !n.is_read && "font-medium")}>{n.title}</p>
+                  {n.message && <p className="text-[12px] text-[#777] mt-0.5 truncate">{n.message}</p>}
+                  <p className="text-[11px] text-[#aaa] mt-1">{new Date(n.created_at).toLocaleString()}</p>
                 </div>
-                {!n.is_read && (
-                  <Check className="h-3.5 w-3.5 text-primary mt-1 shrink-0" />
-                )}
+                {!n.is_read && <div className="h-2 w-2 rounded-full bg-[#db4035] mt-1.5 shrink-0" />}
               </div>
             ))
           )}
@@ -103,29 +100,34 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-[#f7f7f7]">
         {/* Sidebar — desktop only */}
         <div className="hidden md:block">
           <AppSidebar />
         </div>
+
         <div className="flex-1 flex flex-col min-w-0">
           <AnnouncementBanner />
-          <header className="h-14 flex items-center justify-between border-b border-border px-4 bg-card">
+
+          {/* Top header */}
+          <header className="h-12 flex items-center justify-between border-b border-[#e5e5e5] px-4 bg-white shrink-0">
             <div className="flex items-center gap-2">
               <div className="hidden md:block">
-                <SidebarTrigger />
+                <SidebarTrigger className="text-[#777] hover:text-[#202020]" />
               </div>
-              <h2 className="text-sm font-semibold text-foreground md:font-medium md:text-muted-foreground">
-                Welcome, {user?.name}
-              </h2>
+              <span className="text-[13px] text-[#aaa] hidden md:block">
+                {user?.name}
+              </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <NotificationBell />
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-4 md:p-6 pb-20 md:pb-6">{children}</main>
+
+          <main className="flex-1 overflow-auto pb-20 md:pb-0">{children}</main>
         </div>
       </div>
+
       {/* Bottom nav — mobile only */}
       <MobileBottomNav />
     </SidebarProvider>

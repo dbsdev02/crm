@@ -1,12 +1,13 @@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-  LayoutDashboard, Users, Target, CheckSquare, FolderOpen,
-  Calendar, FileText, Award, Share2, Search, Settings, LogOut, Activity, Contact, Plus, X, ChevronRight,
+  LayoutDashboard, Users, Target, CheckSquare, FolderOpen, Inbox,
+  Calendar, FileText, Award, Share2, Search, Settings, LogOut, Activity, Contact, Plus, X, ChevronRight, CalendarDays,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLabels } from "@/contexts/LabelsContext";
+import { useProjects } from "@/hooks/useProjects";
 import { useState } from "react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupAction, SidebarGroupContent,
@@ -29,13 +30,18 @@ interface NavItem {
   roles: string[];
 }
 
+const taskViews: NavItem[] = [
+  { title: "Inbox",    url: "/tasks?view=inbox",    icon: Inbox,        roles: ["admin", "staff", "user"] },
+  { title: "Today",    url: "/tasks?view=today",    icon: CalendarDays, roles: ["admin", "staff", "user"] },
+  { title: "Upcoming", url: "/tasks?view=upcoming", icon: Calendar,     roles: ["admin", "staff", "user"] },
+];
+
 const mainNav: NavItem[] = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard, roles: ["admin", "staff", "user"] },
-  { title: "Leads", url: "/leads", icon: Target, roles: ["admin", "staff"] },
-  { title: "Customers", url: "/customers", icon: Contact, roles: ["admin", "staff"] },
-  { title: "Tasks", url: "/tasks", icon: CheckSquare, roles: ["admin", "staff", "user"] },
-  { title: "Projects", url: "/projects", icon: FolderOpen, roles: ["admin", "staff", "user"] },
-  { title: "Calendar", url: "/calendar", icon: Calendar, roles: ["admin", "staff", "user"] },
+  { title: "Dashboard", url: "/",         icon: LayoutDashboard, roles: ["admin", "staff", "user"] },
+  { title: "Leads",     url: "/leads",    icon: Target,          roles: ["admin", "staff"] },
+  { title: "Customers", url: "/customers",icon: Contact,         roles: ["admin", "staff"] },
+  { title: "Projects",  url: "/projects", icon: FolderOpen,      roles: ["admin", "staff", "user"] },
+  { title: "Calendar",  url: "/calendar", icon: Calendar,        roles: ["admin", "staff", "user"] },
 ];
 
 const adminNav: NavItem[] = [
@@ -79,6 +85,8 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { user, logout } = useAuth();
   const { labels, addLabel, removeLabel, activeFilter, setActiveFilter } = useLabels();
+  const { projects } = useProjects();
+  const [projectsOpen, setProjectsOpen] = useState(true);
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [addLabelOpen, setAddLabelOpen] = useState(false);
   const [newLabelName, setNewLabelName] = useState("");
@@ -125,13 +133,95 @@ export function AppSidebar() {
 
         <Separator className="bg-sidebar-border" />
 
-        {/* Main navigation */}
+        {/* Task views — Todoist style */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/60">Main</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/50 text-[11px] uppercase tracking-wider">Tasks</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {filterByRole(taskViews).map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to={item.url}
+                      className="hover:bg-sidebar-accent text-[13px]"
+                      activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                    >
+                      <item.icon className="mr-2 h-4 w-4 shrink-0" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Main navigation — without Projects (shown separately below) */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-sidebar-foreground/50 text-[11px] uppercase tracking-wider">Main</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>{renderItems(filterByRole(mainNav))}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Projects — Todoist style with color dots */}
+        {!collapsed && (
+          <Collapsible open={projectsOpen} onOpenChange={setProjectsOpen} className="group/projects">
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <CollapsibleTrigger className="flex w-full items-center justify-between hover:bg-sidebar-accent rounded-md px-2">
+                  <span className="text-[11px] uppercase tracking-wider text-sidebar-foreground/50">Projects</span>
+                  <div className="flex items-center gap-1 ml-auto">
+                    <span
+                      role="button"
+                      onClick={(e) => { e.stopPropagation(); navigate("/projects"); }}
+                      className="flex items-center justify-center rounded-md hover:bg-sidebar-accent p-0.5"
+                      title="All projects"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </span>
+                    <ChevronRight className="h-3.5 w-3.5 transition-transform group-data-[state=open]/projects:rotate-90" />
+                  </div>
+                </CollapsibleTrigger>
+              </SidebarGroupLabel>
+              <CollapsibleContent>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {projects.slice(0, 10).map((p) => (
+                      <SidebarMenuItem key={p.id}>
+                        <SidebarMenuButton asChild>
+                          <NavLink
+                            to={`/projects/${p.id}`}
+                            className="hover:bg-sidebar-accent text-[13px]"
+                            activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                          >
+                            <span
+                              className="h-2.5 w-2.5 rounded-full shrink-0 mr-2"
+                              style={{ backgroundColor: p.color || "#4073ff" }}
+                            />
+                            <span className="truncate">{p.name}</span>
+                          </NavLink>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild>
+                        <NavLink
+                          to="/projects"
+                          className="hover:bg-sidebar-accent text-[12px] text-sidebar-foreground/50"
+                          activeClassName=""
+                        >
+                          <FolderOpen className="mr-2 h-3.5 w-3.5 shrink-0" />
+                          <span>All projects</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </CollapsibleContent>
+            </SidebarGroup>
+          </Collapsible>
+        )}
 
         {/* Filters & Labels */}
         {!collapsed && (
