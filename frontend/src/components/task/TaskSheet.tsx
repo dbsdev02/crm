@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { parseTask, type ParsedTask } from "@/lib/TaskParser";
+import { parseTask, computeReminderAt, type ParsedTask } from "@/lib/TaskParser";
 import { TaskPreviewChips } from "./TaskPreviewChips";
 import { useMention, type MentionPerson } from "@/hooks/useMention";
 import { MentionDropdown } from "@/components/MentionDropdown";
@@ -40,6 +40,7 @@ const emptyForm = () => ({
   sectionId: "none",
   labels: [] as string[],
   recurring: null as string | null,
+  reminder_offset_min: null as number | null,
 });
 
 // Debounce helper
@@ -98,13 +99,13 @@ export function TaskSheet({
     }
     const result = parseTask(debouncedInput);
     setParsed(result);
-    // Auto-fill form fields from parsed result
     setForm((f) => ({
       ...f,
-      deadline: result.due_date || f.deadline,
+      deadline: result.due_date ?? f.deadline,
       priority: result.priority,
       labels: result.labels.length > 0 ? result.labels : f.labels,
       recurring: result.recurring,
+      reminder_offset_min: result.reminder_offset_min,
     }));
   }, [debouncedInput, smartMode]);
 
@@ -117,6 +118,7 @@ export function TaskSheet({
 
   const handleSave = () => {
     if (!finalTitle.trim()) return;
+    const reminder_at = computeReminderAt(form.deadline || null, form.reminder_offset_min);
     onSave({
       title: finalTitle.trim(),
       description: form.description.trim(),
@@ -126,6 +128,8 @@ export function TaskSheet({
       section_id: form.sectionId === "none" ? null : form.sectionId,
       parent_task_id: defaultParentId || null,
       labels: form.labels,
+      recurring_rule: form.recurring || null,
+      reminder_at: reminder_at || null,
       status: "pending",
     });
     onOpenChange(false);
@@ -162,6 +166,15 @@ export function TaskSheet({
       rawInput: f.rawInput.replace(`#${l}`, "").trim(),
       labels: f.labels.filter((x) => x !== l),
     }));
+  };
+
+  const clearReminder = () => {
+    if (parsed) {
+      const rt = parsed.tokens.find((t) => t.type === "reminder");
+      if (rt) setForm((f) => ({ ...f, rawInput: f.rawInput.replace(rt.raw, "").trim(), reminder_offset_min: null }));
+    } else {
+      setForm((f) => ({ ...f, reminder_offset_min: null }));
+    }
   };
 
   const clearRecurring = () => {
@@ -251,14 +264,14 @@ export function TaskSheet({
             )}
           </div>
 
-          {/* Live preview chips */}
           {smartMode && parsed && (
             <TaskPreviewChips
-              parsed={{ ...parsed, labels: form.labels, priority: form.priority, due_date: form.deadline, recurring: form.recurring }}
+              parsed={{ ...parsed, labels: form.labels, priority: form.priority, due_date: form.deadline, recurring: form.recurring, reminder_offset_min: form.reminder_offset_min }}
               onClearDate={clearDate}
               onClearPriority={clearPriority}
               onClearLabel={clearLabel}
               onClearRecurring={clearRecurring}
+              onClearReminder={clearReminder}
             />
           )}
 

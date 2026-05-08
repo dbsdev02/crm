@@ -22,6 +22,7 @@ import Logs from "@/pages/Logs";
 import Credits from "@/pages/Credits";
 import Settings from "@/pages/Settings";
 import PlaceholderPage from "@/pages/PlaceholderPage";
+import Reports from "@/pages/Reports";
 import NotFound from "@/pages/NotFound";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 
@@ -58,7 +59,7 @@ const App = () => (
                 <Route path="/credits" element={<ProtectedLayout allowedRoles={["admin", "staff"]}><Credits /></ProtectedLayout>} />
                 <Route path="/social-media" element={<ProtectedLayout allowedRoles={["admin", "staff"]}><PlaceholderPage title="Social Media Activities" description="Manage client social media calendars" /></ProtectedLayout>} />
                 <Route path="/seo" element={<ProtectedLayout allowedRoles={["admin", "staff"]}><PlaceholderPage title="SEO Activities" description="Track SEO plans and performance" /></ProtectedLayout>} />
-                <Route path="/reports" element={<ProtectedLayout allowedRoles={["admin", "staff"]}><PlaceholderPage title="Reports" description="View performance reports and analytics" /></ProtectedLayout>} />
+                <Route path="/reports" element={<ProtectedLayout allowedRoles={["admin", "staff"]}><Reports /></ProtectedLayout>} />
                 <Route path="/settings" element={<ProtectedLayout allowedRoles={["admin"]}><Settings /></ProtectedLayout>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

@@ -76,23 +76,30 @@ router.post('/', async (req, res) => {
     const {
       title, description, project_id, assigned_to, priority, due_date,
       assignees, labels, section_id = null, parent_task_id = null, order_index = 0,
-      recurring_rule = null,
+      recurring_rule = null, reminder_at = null,
     } = req.body;
     const labelsStr = Array.isArray(labels) && labels.length ? labels.join(',') : null;
     const depth_level = parent_task_id ? 1 : 0;
 
-    // Check which columns exist to stay safe with older DBs
     const [result] = await pool.query(
       `INSERT INTO tasks
          (title, description, project_id, assigned_to, assigned_by, priority, due_date, labels,
-          section_id, parent_task_id, order_index, depth_level, recurring_rule)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          section_id, parent_task_id, order_index, depth_level, recurring_rule, reminder_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [title, description, project_id || null, assigned_to || null, req.user.id,
        priority || 'medium', due_date || null, labelsStr,
        section_id || null, parent_task_id || null, order_index, depth_level,
-       recurring_rule || null]
+       recurring_rule || null, reminder_at || null]
     );
     const taskId = result.insertId;
+
+    // Log automation events
+    if (recurring_rule)
+      await pool.query('INSERT INTO automation_logs (task_id, automation_type, metadata) VALUES (?, ?, ?)',
+        [taskId, 'recurring_set', JSON.stringify({ rule: recurring_rule })]);
+    if (reminder_at)
+      await pool.query('INSERT INTO automation_logs (task_id, automation_type, metadata) VALUES (?, ?, ?)',
+        [taskId, 'reminder_set', JSON.stringify({ reminder_at })]);
 
     if (assignees?.length) {
       for (const uid of assignees) {
@@ -136,7 +143,7 @@ router.put('/:id', async (req, res) => {
   try {
     const {
       title, description, project_id, assigned_to, priority, due_date,
-      status, labels, assignees, section_id, parent_task_id, order_index, recurring_rule,
+      status, labels, assignees, section_id, parent_task_id, order_index, recurring_rule, reminder_at,
     } = req.body;
     const labelsStr = Array.isArray(labels) && labels.length ? labels.join(',') : null;
     const [tasks] = await pool.query('SELECT * FROM tasks WHERE id = ?', [req.params.id]);
@@ -146,13 +153,14 @@ router.put('/:id', async (req, res) => {
     await pool.query(
       `UPDATE tasks SET title=?, description=?, project_id=?, assigned_to=?, priority=?,
        due_date=?, status=?, labels=?, section_id=?, parent_task_id=?, order_index=?,
-       recurring_rule=? WHERE id=?`,
+       recurring_rule=?, reminder_at=? WHERE id=?`,
       [title, description, project_id || null, assigned_to || null, priority,
        due_date || null, status, labelsStr,
        section_id !== undefined ? (section_id || null) : task.section_id,
        parent_task_id !== undefined ? (parent_task_id || null) : task.parent_task_id,
        order_index !== undefined ? order_index : task.order_index,
        recurring_rule !== undefined ? recurring_rule : task.recurring_rule,
+       reminder_at !== undefined ? (reminder_at || null) : task.reminder_at,
        req.params.id]
     );
 

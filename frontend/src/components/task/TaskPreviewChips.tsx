@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Calendar, Flag, Tag, RefreshCw, X } from "lucide-react";
+import { Calendar, Flag, Tag, RefreshCw, X, Bell } from "lucide-react";
 import type { ParsedTask } from "@/lib/TaskParser";
 
 const PRIORITY_STYLE: Record<string, string> = {
@@ -19,13 +19,14 @@ interface TaskPreviewChipsProps {
   onClearPriority?: () => void;
   onClearLabel?: (l: string) => void;
   onClearRecurring?: () => void;
+  onClearReminder?: () => void;
 }
 
 export function TaskPreviewChips({
-  parsed, onClearDate, onClearPriority, onClearLabel, onClearRecurring,
+  parsed, onClearDate, onClearPriority, onClearLabel, onClearRecurring, onClearReminder,
 }: TaskPreviewChipsProps) {
   const hasChips = parsed.due_date || parsed.priority !== "medium" ||
-    parsed.labels.length > 0 || parsed.recurring;
+    parsed.labels.length > 0 || parsed.recurring || parsed.reminder_offset_min !== null;
 
   if (!hasChips) return null;
 
@@ -49,6 +50,16 @@ export function TaskPreviewChips({
           label={parsed.recurring}
           className="bg-purple-50 text-purple-600 border-purple-200"
           onClear={onClearRecurring}
+        />
+      )}
+
+      {/* Reminder chip */}
+      {parsed.reminder_offset_min !== null && (
+        <Chip
+          icon={<Bell className="h-3 w-3" />}
+          label={formatReminderOffset(parsed.reminder_offset_min)}
+          className="bg-yellow-50 text-yellow-700 border-yellow-200"
+          onClear={onClearReminder}
         />
       )}
 
@@ -108,13 +119,17 @@ function formatDate(iso: string): string {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
   const hasTime = iso.includes("T") && (date.getHours() !== 0 || date.getMinutes() !== 0);
   const timeStr = hasTime
     ? ` ${date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}`
     : "";
-
   if (d.getTime() === today.getTime()) return `Today${timeStr}`;
   if (d.getTime() === tomorrow.getTime()) return `Tomorrow${timeStr}`;
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + timeStr;
+}
+
+function formatReminderOffset(mins: number): string {
+  if (mins < 60)   return `Remind ${mins}m before`;
+  if (mins < 1440) return `Remind ${mins / 60}h before`;
+  return `Remind ${mins / 1440}d before`;
 }

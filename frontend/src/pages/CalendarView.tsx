@@ -14,8 +14,9 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Video } from "lucide-react";
+import { Plus, Pencil, Trash2, Video, CheckSquare, Flag } from "lucide-react";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 interface Meeting {
   id: string;
@@ -35,6 +36,10 @@ const toDateStr = (d: Date) => {
 type Form = { title: string; date: string; time: string; attendees: string };
 const empty: Form = { title: "", date: "", time: "10:00", attendees: "" };
 
+const PRIORITY_COLOR: Record<string, string> = {
+  high: "text-red-500", medium: "text-orange-400", low: "text-blue-400", urgent: "text-gray-400",
+};
+
 const CalendarView = () => {
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -43,6 +48,21 @@ const CalendarView = () => {
     queryKey: ["meetings"],
     queryFn: () => api.get<any[]>("/meetings"),
   });
+
+  // Fetch tasks with due dates
+  const { data: rawTasks = [] } = useQuery({
+    queryKey: ["tasks"],
+    queryFn: () => api.get<any[]>("/tasks"),
+  });
+
+  const tasks = (rawTasks as any[]).filter((t) => t.due_date && t.status !== "completed").map((t) => ({
+    id: String(t.id),
+    title: t.title,
+    date: t.due_date.slice(0, 10),
+    time: t.due_date.length > 10 ? new Date(t.due_date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }) : "",
+    priority: t.priority || "medium",
+    status: t.status,
+  }));
 
   const meetings: Meeting[] = (rawMeetings as any[]).map((m) => ({
     id: String(m.id),
@@ -108,7 +128,9 @@ const CalendarView = () => {
 
   const selectedDateStr = date ? toDateStr(date) : "";
   const todayMeetings = useMemo(() => meetings.filter((m) => m.date === selectedDateStr), [meetings, selectedDateStr]);
-  const meetingDates = useMemo(() => meetings.map((m) => new Date(m.date + "T00:00:00")), [meetings]);
+  const todayTasks    = useMemo(() => tasks.filter((t) => t.date === selectedDateStr), [tasks, selectedDateStr]);
+  const meetingDates  = useMemo(() => meetings.map((m) => new Date(m.date + "T00:00:00")), [meetings]);
+  const taskDates     = useMemo(() => tasks.map((t) => new Date(t.date + "T00:00:00")), [tasks]);
 
   const openAdd = () => {
     setEditingId(null);
@@ -161,8 +183,11 @@ const CalendarView = () => {
               mode="single"
               selected={date}
               onSelect={setDate}
-              modifiers={{ hasMeeting: meetingDates }}
-              modifiersClassNames={{ hasMeeting: "font-bold text-primary underline underline-offset-4" }}
+              modifiers={{ hasMeeting: meetingDates, hasTask: taskDates }}
+              modifiersClassNames={{
+                hasMeeting: "font-bold text-primary underline underline-offset-4",
+                hasTask: "font-bold text-[#db4035]",
+              }}
               className="rounded-md"
             />
           </CardContent>
@@ -175,26 +200,59 @@ const CalendarView = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {todayMeetings.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No meetings scheduled for this day.</p>
+            {todayMeetings.length === 0 && todayTasks.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No meetings or tasks scheduled for this day.</p>
             ) : (
-              <div className="space-y-3">
-                {todayMeetings.map((meeting) => (
-                  <div key={meeting.id} className="rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-medium">{meeting.title}</p>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary">{meeting.time}</Badge>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(meeting)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDeleteId(meeting.id)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+              <div className="space-y-4">
+
+                {/* Tasks */}
+                {todayTasks.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-semibold text-[#aaa] uppercase tracking-wider">Tasks</p>
+                    {todayTasks.map((task) => (
+                      <div key={task.id} className={cn(
+                        "flex items-center gap-2.5 rounded-lg border px-3 py-2",
+                        task.status === "overdue" ? "border-red-200 bg-red-50" : "border-[#f0f0f0] bg-white"
+                      )}>
+                        <CheckSquare className={cn("h-4 w-4 shrink-0", PRIORITY_COLOR[task.priority])} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-medium text-[#202020] truncate">{task.title}</p>
+                          {task.time && <p className="text-[11px] text-[#888]">{task.time}</p>}
+                        </div>
+                        <span className={cn(
+                          "text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
+                          task.status === "overdue" ? "bg-red-100 text-red-600" : "bg-[#f5f5f5] text-[#777]"
+                        )}>
+                          {task.status === "overdue" ? "Overdue" : task.priority.toUpperCase()}
+                        </span>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
+                )}
+
+                {/* Meetings */}
+                {todayMeetings.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-semibold text-[#aaa] uppercase tracking-wider">Meetings</p>
+                    {todayMeetings.map((meeting) => (
+                      <div key={meeting.id} className="rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-medium text-[13px]">{meeting.title}</p>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary">{meeting.time}</Badge>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(meeting)}>
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDeleteId(meeting.id)}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
               </div>
             )}
           </CardContent>

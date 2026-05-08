@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { CheckCircle2, ChevronRight, Flag, Calendar, Tag } from "lucide-react";
+import { CheckCircle2, ChevronRight, Flag, Calendar, Tag, RotateCcw } from "lucide-react";
+import { api } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
 
 const PRIORITY_COLOR: Record<string, string> = {
-  high: "text-red-500",
-  medium: "text-orange-400",
-  low: "text-blue-400",
-  urgent: "text-gray-400",
+  high: "text-red-500", medium: "text-orange-400", low: "text-blue-400", urgent: "text-gray-400",
 };
 const PRIORITY_LABEL: Record<string, string> = {
   high: "P1", medium: "P2", low: "P3", urgent: "P4",
@@ -41,8 +40,12 @@ interface TaskItemProps {
 export function TaskItem({ task, subtasks = [], onComplete, onDelete, onClick, depth = 0 }: TaskItemProps) {
   const [completing, setCompleting] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const completed = task.status === "completed";
-  const deadline = formatDeadline(task.deadline);
+  const [rescheduling, setRescheduling] = useState(false);
+  const qc = useQueryClient();
+
+  const completed  = task.status === "completed";
+  const isOverdue  = !completed && (task.status === "overdue" || (task.deadline && task.deadline.slice(0, 10) < todayStr()));
+  const deadline   = formatDeadline(task.deadline);
   const hasSubtasks = subtasks.length > 0;
 
   const handleComplete = (e: React.MouseEvent) => {
@@ -52,8 +55,33 @@ export function TaskItem({ task, subtasks = [], onComplete, onDelete, onClick, d
     setTimeout(() => { onComplete(task.id); setCompleting(false); }, 250);
   };
 
+  const rescheduleToTomorrow = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRescheduling(true);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const due = `${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}T09:00`;
+    try {
+      await api.put(`/tasks/${task.id}`, {
+        ...task,
+        due_date: due,
+        status: "pending",
+        assigned_to: task.assignedTo,
+        project_id: task.projectId,
+        labels: task.labels,
+      });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+    } finally {
+      setRescheduling(false);
+    }
+  };
+
   return (
     <div className={cn("group", depth > 0 && "ml-5 pl-3 border-l border-[#e5e5e5]")}>
+
+      {/* Main row */}
       <div
         className={cn(
           "flex items-start gap-3 px-3 py-2 cursor-pointer rounded-lg",
@@ -79,10 +107,7 @@ export function TaskItem({ task, subtasks = [], onComplete, onDelete, onClick, d
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <p className={cn(
-            "text-[14px] leading-snug text-[#202020]",
-            completed && "line-through text-[#aaa]"
-          )}>
+          <p className={cn("text-[14px] leading-snug text-[#202020]", completed && "line-through text-[#aaa]")}>
             {task.title}
           </p>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
@@ -122,6 +147,22 @@ export function TaskItem({ task, subtasks = [], onComplete, onDelete, onClick, d
         )}
       </div>
 
+      {/* Overdue reschedule suggestion */}
+      {isOverdue && (
+        <div className="ml-7 mb-1 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+          <span className="text-[11px] text-red-400">Overdue —</span>
+          <button
+            onClick={rescheduleToTomorrow}
+            disabled={rescheduling}
+            className="flex items-center gap-1 text-[11px] text-[#db4035] hover:underline font-medium disabled:opacity-50"
+          >
+            <RotateCcw className="h-2.5 w-2.5" />
+            {rescheduling ? "Moving…" : "Move to tomorrow?"}
+          </button>
+        </div>
+      )}
+
+      {/* Subtasks */}
       {hasSubtasks && !collapsed && (
         <div>
           {subtasks.map((sub) => (
@@ -136,6 +177,7 @@ export function TaskItem({ task, subtasks = [], onComplete, onDelete, onClick, d
           ))}
         </div>
       )}
+
     </div>
   );
 }
