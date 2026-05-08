@@ -1,13 +1,7 @@
-const BASE = `${import.meta.env.VITE_API_URL || ""}/api`;
+const BASE = import.meta.env.PROD ? "https://internal.ltd/backend/api" : "/api";
 
 function getToken() {
   return localStorage.getItem("crm_token");
-}
-
-function handleUnauthorized() {
-  localStorage.removeItem("crm_token");
-  localStorage.removeItem("crm_user");
-  window.location.href = "/login";
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -20,10 +14,6 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       ...options.headers,
     },
   });
-  if (res.status === 401) {
-    handleUnauthorized();
-    throw new Error("Session expired. Please log in again.");
-  }
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Request failed");
   return data as T;
