@@ -45,18 +45,15 @@ router.delete('/sections/:id', async (req, res) => {
 // ── Tasks ─────────────────────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {
-    // LEFT JOIN on assigned_by to avoid crash when user deleted
     let query = `
       SELECT t.*,
              u.name  AS assigned_to_name,
              ab.name AS assigned_by_name,
-             p.name  AS project_name,
-             s.name  AS section_name
+             p.name  AS project_name
       FROM tasks t
-      LEFT JOIN users    u  ON t.assigned_to    = u.id
-      LEFT JOIN users    ab ON t.assigned_by    = ab.id
-      LEFT JOIN projects p  ON t.project_id     = p.id
-      LEFT JOIN task_sections s ON t.section_id = s.id`;
+      LEFT JOIN users    u  ON t.assigned_to = u.id
+      LEFT JOIN users    ab ON t.assigned_by = ab.id
+      LEFT JOIN projects p  ON t.project_id  = p.id`;
     const params = [];
     if (req.user.role === 'staff') {
       query += ' WHERE t.assigned_to = ? OR t.assigned_by = ?';
@@ -65,7 +62,7 @@ router.get('/', async (req, res) => {
       query += ' WHERE t.assigned_to = ?';
       params.push(req.user.id);
     }
-    query += ' ORDER BY t.project_id, t.section_id, t.order_index, t.due_date';
+    query += ' ORDER BY t.due_date ASC';
     const [tasks] = await pool.query(query, params);
     res.json(tasks);
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -75,29 +72,24 @@ router.post('/', async (req, res) => {
   try {
     const {
       title, description, project_id, assigned_to, priority, due_date,
-      assignees, labels, section_id = null, parent_task_id = null, order_index = 0,
-      recurring_rule = null,
+      assignees, labels,
     } = req.body;
     const labelsStr = Array.isArray(labels) && labels.length ? labels.join(',') : null;
-    const depth_level = parent_task_id ? 1 : 0;
 
-    // Check which columns exist to stay safe with older DBs
     const [result] = await pool.query(
-      `INSERT INTO tasks
-         (title, description, project_id, assigned_to, assigned_by, priority, due_date, labels,
-          section_id, parent_task_id, order_index, depth_level, recurring_rule)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO tasks (title, description, project_id, assigned_to, assigned_by, priority, due_date, labels)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [title, description, project_id || null, assigned_to || null, req.user.id,
-       priority || 'medium', due_date || null, labelsStr,
-       section_id || null, parent_task_id || null, order_index, depth_level,
-       recurring_rule || null]
+       priority || 'medium', due_date || null, labelsStr]
     );
     const taskId = result.insertId;
 
     if (assignees?.length) {
       for (const uid of assignees) {
-        await pool.query('INSERT IGNORE INTO task_assignees (task_id, user_id) VALUES (?, ?)', [taskId, uid]);
-        await createNotification(uid, 'New Task', `Task "${title}" assigned to you`, 'task', taskId, 'task');
+        try {
+          await pool.query('INSERT IGNORE INTO task_assignees (task_id, user_id) VALUES (?, ?)', [taskId, uid]);
+          await createNotification(uid, 'New Task', `Task "${title}" assigned to you`, 'task', taskId, 'task');
+        } catch {}
       }
     }
     if (assigned_to) {
@@ -135,8 +127,8 @@ router.put('/:id/complete', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const {
-      title, description, project_id, assigned_to, priority, due_date,
-      status, labels, assignees, section_id, parent_task_id, order_index, recurring_rule,
+      title, description, project_id, assigned_to, priority,
+      due_date, status, labels, assignees,
     } = req.body;
     const labelsStr = Array.isArray(labels) && labels.length ? labels.join(',') : null;
     const [tasks] = await pool.query('SELECT * FROM tasks WHERE id = ?', [req.params.id]);
@@ -144,25 +136,21 @@ router.put('/:id', async (req, res) => {
     const task = tasks[0];
 
     await pool.query(
-      `UPDATE tasks SET title=?, description=?, project_id=?, assigned_to=?, priority=?,
-       due_date=?, status=?, labels=?, section_id=?, parent_task_id=?, order_index=?,
-       recurring_rule=? WHERE id=?`,
-      [title, description, project_id || null, assigned_to || null, priority,
-       due_date || null, status, labelsStr,
-       section_id !== undefined ? (section_id || null) : task.section_id,
-       parent_task_id !== undefined ? (parent_task_id || null) : task.parent_task_id,
-       order_index !== undefined ? order_index : task.order_index,
-       recurring_rule !== undefined ? recurring_rule : task.recurring_rule,
-       req.params.id]
+      `UPDATE tasks SET title=?, description=?, project_id=?, assigned_to=?,
+       priority=?, due_date=?, status=?, labels=? WHERE id=?`,
+      [title, description, project_id || null, assigned_to || null,
+       priority, due_date || null, status, labelsStr, req.params.id]
     );
 
     if (assignees) {
-      await pool.query('DELETE FROM task_assignees WHERE task_id=?', [req.params.id]);
-      for (const uid of assignees) {
-        await pool.query('INSERT IGNORE INTO task_assignees (task_id, user_id) VALUES (?, ?)', [req.params.id, uid]);
-        if (uid !== req.user.id)
-          await createNotification(uid, 'Task Assigned', `Task "${title}" assigned to you`, 'task', req.params.id, 'task');
-      }
+      try {
+        await pool.query('DELETE FROM task_assignees WHERE task_id=?', [req.params.id]);
+        for (const uid of assignees) {
+          await pool.query('INSERT IGNORE INTO task_assignees (task_id, user_id) VALUES (?, ?)', [req.params.id, uid]);
+          if (uid !== req.user.id)
+            await createNotification(uid, 'Task Assigned', `Task "${title}" assigned to you`, 'task', req.params.id, 'task');
+        }
+      } catch {}
     }
     if (assigned_to && assigned_to !== task.assigned_to && assigned_to !== req.user.id)
       await createNotification(assigned_to, 'Task Assigned', `Task "${title}" assigned to you`, 'task', req.params.id, 'task');
