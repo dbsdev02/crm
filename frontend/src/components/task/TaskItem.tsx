@@ -134,6 +134,25 @@ export function TaskItem({ task, subtasks = [], onComplete, onDelete, onClick, d
             {task.projectName && depth === 0 && (
               <span className="text-[11px] text-[#777] truncate max-w-[100px]">{task.projectName}</span>
             )}
+            {/* Assignee avatars */}
+            {task.assignees?.length > 0 && (
+              <div className="flex -space-x-1">
+                {task.assignees.slice(0, 3).map((a: any) => (
+                  <div
+                    key={a.id}
+                    title={a.name}
+                    className="h-4 w-4 rounded-full bg-[#dbeafe] border border-white flex items-center justify-center text-[8px] font-bold text-blue-700"
+                  >
+                    {a.name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
+                  </div>
+                ))}
+                {task.assignees.length > 3 && (
+                  <div className="h-4 w-4 rounded-full bg-[#e0e0e0] border border-white flex items-center justify-center text-[8px] text-[#555]">
+                    +{task.assignees.length - 3}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

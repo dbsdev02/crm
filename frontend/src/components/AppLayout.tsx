@@ -3,17 +3,19 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { useAuth } from "@/contexts/AuthContext";
-import { Bell, Check, CheckCheck, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Bell, CheckCheck } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 const NotificationBell = () => {
   const qc = useQueryClient();
+  const { toast } = useToast();
+  const prevUnreadRef = useRef<number | null>(null);
 
   const { data: notifications = [] } = useQuery({
     queryKey: ["notifications"],
@@ -24,8 +26,37 @@ const NotificationBell = () => {
   const { data: unreadData } = useQuery({
     queryKey: ["notifications-unread"],
     queryFn: () => api.get<{ count: number }>("/notifications/unread-count"),
-    refetchInterval: 15000,
+    refetchInterval: 8000,
   });
+
+  // Show popup toast when a new notification arrives
+  useEffect(() => {
+    const current = unreadData?.count ?? 0;
+    if (prevUnreadRef.current !== null && current > prevUnreadRef.current) {
+      // Refetch to get the latest notification
+      qc.invalidateQueries({ queryKey: ["notifications"] });
+    }
+    prevUnreadRef.current = current;
+  }, [unreadData?.count]);
+
+  // Watch notifications list — when it updates and has new unread, show toast
+  const prevNotifIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    const list = notifications as any[];
+    if (!list.length) return;
+    const latest = list[0];
+    if (prevNotifIdRef.current === null) {
+      prevNotifIdRef.current = latest.id;
+      return;
+    }
+    if (latest.id !== prevNotifIdRef.current && !latest.is_read) {
+      prevNotifIdRef.current = latest.id;
+      toast({
+        title: latest.title,
+        description: latest.message || undefined,
+      });
+    }
+  }, [notifications]);
 
   const markRead = useMutation({
     mutationFn: (id: number) => api.put(`/notifications/${id}/read`, {}),
@@ -95,6 +126,20 @@ const NotificationBell = () => {
   );
 };
 
+import { usePushNotification } from "@/hooks/use-push-notification";
+
+const PushPermissionRequester = () => {
+  const { isSupported, isSubscribed, requestAndSubscribe } = usePushNotification();
+  useEffect(() => {
+    if (isSupported && !isSubscribed) {
+      // Delay 3s so it doesn't fire immediately on page load
+      const t = setTimeout(() => requestAndSubscribe(), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [isSupported, isSubscribed]);
+  return null;
+};
+
 export const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
 
@@ -108,6 +153,7 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
         <div className="flex-1 flex flex-col min-w-0">
           <AnnouncementBanner />
+          <PushPermissionRequester />
 
           {/* Top header */}
           <header className="h-12 flex items-center justify-between border-b border-[#e5e5e5] px-4 bg-white shrink-0">

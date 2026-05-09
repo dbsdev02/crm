@@ -42,6 +42,7 @@ export function useTasks() {
     orderIndex: t.order_index || 0,
     assignedTo: t.assigned_to ?? null,
     assignedToName: t.assigned_to_name || "",
+    assignees: Array.isArray(t.assignees) ? t.assignees : [],
     labels: t.labels ? String(t.labels).split(",").map((l: string) => l.trim()).filter(Boolean) : [],
     recurringRule: t.recurring_rule || null,
   }));

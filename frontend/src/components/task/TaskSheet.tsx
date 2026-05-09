@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { parseTask, computeReminderAt, type ParsedTask } from "@/lib/TaskParser";
+import { parseTask, type ParsedTask } from "@/lib/TaskParser";
 import { TaskPreviewChips } from "./TaskPreviewChips";
 import { useMention, type MentionPerson } from "@/hooks/useMention";
 import { MentionDropdown } from "@/components/MentionDropdown";
@@ -118,7 +118,18 @@ export function TaskSheet({
 
   const handleSave = () => {
     if (!finalTitle.trim()) return;
-    const reminder_at = computeReminderAt(form.deadline || null, form.reminder_offset_min);
+
+    // Extract @mentioned staff user IDs from title + description
+    const combinedText = `${form.rawInput} ${form.description}`;
+    const assignees = people
+      .filter((p) => p.role !== "customer" && combinedText.includes(`@${p.name}`))
+      .map((p) => Number(p.id))
+      .filter((id, i, arr) => arr.indexOf(id) === i); // dedupe
+
+    const reminder_at = form.deadline && form.reminder_offset_min
+      ? new Date(new Date(form.deadline).getTime() - form.reminder_offset_min * 60000).toISOString()
+      : null;
+
     onSave({
       title: finalTitle.trim(),
       description: form.description.trim(),
@@ -129,7 +140,9 @@ export function TaskSheet({
       parent_task_id: defaultParentId || null,
       labels: form.labels,
       recurring_rule: form.recurring || null,
-      reminder_at: reminder_at || null,
+      reminder_at,
+      assignees,
+      assigned_to: assignees[0] ?? null,
       status: "pending",
     });
     onOpenChange(false);

@@ -45,7 +45,6 @@ router.delete('/sections/:id', async (req, res) => {
 // ── Tasks ─────────────────────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {
-    // LEFT JOIN on assigned_by to avoid crash when user deleted
     let query = `
       SELECT t.*,
              u.name  AS assigned_to_name,
@@ -59,15 +58,43 @@ router.get('/', async (req, res) => {
       LEFT JOIN task_sections s ON t.section_id = s.id`;
     const params = [];
     if (req.user.role === 'staff') {
-      query += ' WHERE t.assigned_to = ? OR t.assigned_by = ?';
+      // Show tasks assigned to me directly OR via task_assignees (@ mention)
+      query += ` WHERE (
+        t.assigned_to = ?
+        OR t.id IN (SELECT task_id FROM task_assignees WHERE user_id = ?)
+      )`;
       params.push(req.user.id, req.user.id);
     } else if (req.user.role === 'user') {
-      query += ' WHERE t.assigned_to = ?';
-      params.push(req.user.id);
+      query += ` WHERE (
+        t.assigned_to = ?
+        OR t.id IN (SELECT task_id FROM task_assignees WHERE user_id = ?)
+      )`;
+      params.push(req.user.id, req.user.id);
     }
     query += ' ORDER BY t.project_id, t.section_id, t.order_index, t.due_date';
     const [tasks] = await pool.query(query, params);
-    res.json(tasks);
+
+    // Attach assignee names to each task
+    const taskIds = tasks.map(t => t.id);
+    let assigneeMap = {};
+    if (taskIds.length) {
+      const [assigneeRows] = await pool.query(
+        `SELECT ta.task_id, u.id, u.name, u.avatar
+         FROM task_assignees ta JOIN users u ON ta.user_id = u.id
+         WHERE ta.task_id IN (?)`, [taskIds]
+      );
+      for (const row of assigneeRows) {
+        if (!assigneeMap[row.task_id]) assigneeMap[row.task_id] = [];
+        assigneeMap[row.task_id].push({ id: row.id, name: row.name, avatar: row.avatar });
+      }
+    }
+
+    const result = tasks.map(t => ({
+      ...t,
+      assignees: assigneeMap[t.id] || [],
+    }));
+
+    res.json(result);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
