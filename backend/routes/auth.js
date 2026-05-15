@@ -35,9 +35,13 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.post('/register', authenticate, requireRole('admin'), async (req, res) => {
+router.post('/register', authenticate, requireRole('admin', 'super_admin'), async (req, res) => {
   try {
     const { email, password, name, phone, role } = req.body;
+    // only super_admin can create admin or super_admin accounts
+    if ((role === 'admin' || role === 'super_admin') && req.user.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Only super admin can create admin accounts' });
+    }
     const hashed = await bcrypt.hash(password, 10);
     const [result] = await pool.query(
       'INSERT INTO users (email, password, name, phone) VALUES (?, ?, ?, ?)',
@@ -69,9 +73,13 @@ router.get('/me', authenticate, async (req, res) => {
   res.json({ ...req.user, password: undefined, permissions: perms });
 });
 
-router.put('/users/:id', authenticate, requireRole('admin'), async (req, res) => {
+router.put('/users/:id', authenticate, requireRole('admin', 'super_admin'), async (req, res) => {
   try {
     const { name, phone, is_active, role, credits_delta, points_delta } = req.body;
+    // only super_admin can assign admin/super_admin roles
+    if ((role === 'admin' || role === 'super_admin') && req.user.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Only super admin can assign admin roles' });
+    }
     if (name !== undefined) {
       await pool.query('UPDATE users SET name = ?, phone = ?, is_active = ? WHERE id = ?',
         [name, phone, is_active, req.params.id]);
@@ -98,7 +106,7 @@ router.put('/users/:id', authenticate, requireRole('admin'), async (req, res) =>
   }
 });
 
-router.put('/users/:id/permissions', authenticate, requireRole('admin'), async (req, res) => {
+router.put('/users/:id/permissions', authenticate, requireRole('admin', 'super_admin'), async (req, res) => {
   try {
     const { permissions } = req.body;
     for (const [module, hasAccess] of Object.entries(permissions)) {
@@ -129,9 +137,19 @@ router.get('/staff-list', authenticate, async (req, res) => {
   }
 });
 
-router.delete('/users/:id', authenticate, requireRole('admin'), async (req, res) => {
+router.delete('/users/:id', authenticate, requireRole('admin', 'super_admin'), async (req, res) => {
   try {
     const { id } = req.params;
+    // prevent deleting super_admin accounts unless requester is super_admin
+    const [[target]] = await pool.query(
+      'SELECT r.name as role FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = ?', [id]
+    );
+    if (target?.role === 'super_admin') {
+      return res.status(403).json({ error: 'Cannot delete a super admin account' });
+    }
+    if (target?.role === 'admin' && req.user.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Only super admin can delete admin accounts' });
+    }
     await pool.query('DELETE FROM staff_permissions WHERE user_id = ?', [id]);
     await pool.query('DELETE FROM staff_credits WHERE user_id = ?', [id]);
     await pool.query('DELETE FROM user_roles WHERE user_id = ?', [id]);
@@ -143,7 +161,7 @@ router.delete('/users/:id', authenticate, requireRole('admin'), async (req, res)
   }
 });
 
-router.get('/users', authenticate, requireRole('admin'), async (req, res) => {
+router.get('/users', authenticate, requireRole('admin', 'super_admin'), async (req, res) => {
   try {
     const [users] = await pool.query(
       `SELECT u.id, u.email, u.name, u.phone, u.is_active, u.created_at, r.name as role,

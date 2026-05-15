@@ -37,24 +37,24 @@ const taskViews: NavItem[] = [
 ];
 
 const mainNav: NavItem[] = [
-  { title: "Dashboard", url: "/",         icon: LayoutDashboard, roles: ["admin", "staff", "user"] },
-  { title: "Leads",     url: "/leads",    icon: Target,          roles: ["admin", "staff"] },
-  { title: "Customers", url: "/customers",icon: Contact,         roles: ["admin", "staff"] },
-  { title: "Projects",  url: "/projects", icon: FolderOpen,      roles: ["admin", "staff", "user"] },
-  { title: "Calendar",  url: "/calendar", icon: Calendar,        roles: ["admin", "staff", "user"] },
+  { title: "Dashboard", url: "/",         icon: LayoutDashboard, roles: ["super_admin", "admin", "staff", "user"] },
+  { title: "Leads",     url: "/leads",    icon: Target,          roles: ["super_admin", "admin", "staff"] },
+  { title: "Customers", url: "/customers",icon: Contact,         roles: ["super_admin", "admin", "staff"] },
+  { title: "Projects",  url: "/projects", icon: FolderOpen,      roles: ["super_admin", "admin", "staff", "user"] },
+  { title: "Calendar",  url: "/calendar", icon: Calendar,        roles: ["super_admin", "admin", "staff", "user"] },
 ];
 
 const adminNav: NavItem[] = [
-  { title: "Staff Management", url: "/staff", icon: Users, roles: ["admin"] },
-  { title: "Logs", url: "/logs", icon: Activity, roles: ["admin"] },
-  { title: "Settings", url: "/settings", icon: Settings, roles: ["admin"] },
+  { title: "Staff Management", url: "/staff", icon: Users, roles: ["super_admin", "admin"] },
+  { title: "Logs", url: "/logs", icon: Activity, roles: ["super_admin", "admin"] },
+  { title: "Settings", url: "/settings", icon: Settings, roles: ["super_admin", "admin"] },
 ];
 
 const extraNav: NavItem[] = [
-  { title: "Social Media", url: "/social-media", icon: Share2, roles: ["admin", "staff"] },
-  { title: "SEO Activities", url: "/seo", icon: Search, roles: ["admin", "staff"] },
-  { title: "Credits", url: "/credits", icon: Award, roles: ["admin", "staff"] },
-  { title: "Reports", url: "/reports", icon: FileText, roles: ["admin", "staff"] },
+  { title: "Social Media", url: "/social-media", icon: Share2, roles: ["super_admin", "admin", "staff"] },
+  { title: "SEO Activities", url: "/seo", icon: Search, roles: ["super_admin", "admin", "staff"] },
+  { title: "Credits", url: "/credits", icon: Award, roles: ["super_admin", "admin", "staff"] },
+  { title: "Reports", url: "/reports", icon: FileText, roles: ["super_admin", "admin", "staff"] },
 ];
 
 const LABEL_COLORS = [
@@ -297,7 +297,9 @@ export function AppSidebar() {
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-sidebar-foreground truncate">{user.name}</p>
-                <p className="text-xs text-sidebar-foreground/60 truncate capitalize">{user.role}</p>
+                <p className="text-xs text-sidebar-foreground/60 truncate capitalize">
+                  {user.role === "super_admin" ? "⚡ Super Admin" : user.role}
+                </p>
               </div>
             </div>
           )}

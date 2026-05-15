@@ -21,10 +21,10 @@ import { Plus, Settings, Award, Pencil, Trash2, Search, Coins } from "lucide-rea
 import { api } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 
-type StaffMember = { id: string; name: string; email: string; role: "admin" | "staff"; permissions: any[]; credits: number; points: number; joinedAt?: string; };
+type StaffMember = { id: string; name: string; email: string; role: "super_admin" | "admin" | "staff"; permissions: any[]; credits: number; points: number; joinedAt?: string; };
 
 const ALL_MODULES = ["leads", "tasks", "projects", "calendar", "assets", "social_media", "seo", "reports", "credits"];
-type Draft = { id?: string; name: string; email: string; password?: string; role: "admin" | "staff"; credits: number; points: number; };
+type Draft = { id?: string; name: string; email: string; password?: string; role: "super_admin" | "admin" | "staff"; credits: number; points: number; };
 const emptyDraft: Draft = { name: "", email: "", password: "", role: "staff", credits: 0, points: 0 };
 
 const StaffManagement = () => {
@@ -63,7 +63,7 @@ const StaffManagement = () => {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["users"] }); },
   });
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "staff">("all");
+  const [roleFilter, setRoleFilter] = useState<"all" | "super_admin" | "admin" | "staff">("all");
   const [profileOpen, setProfileOpen] = useState(false);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
@@ -153,6 +153,7 @@ const StaffManagement = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All roles</SelectItem>
+            <SelectItem value="super_admin">⚡ Super Admin</SelectItem>
             <SelectItem value="admin">Admins</SelectItem>
             <SelectItem value="staff">Staff</SelectItem>
           </SelectContent>
@@ -184,8 +185,8 @@ const StaffManagement = () => {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{member.name}</p>
                     <p className="text-sm text-muted-foreground truncate">{member.email}</p>
-                    <Badge variant={member.role === "admin" ? "default" : "secondary"} className="mt-1 capitalize">
-                      {member.role}
+                    <Badge variant={member.role === "super_admin" ? "destructive" : member.role === "admin" ? "default" : "secondary"} className="mt-1 capitalize">
+                      {member.role === "super_admin" ? "⚡ Super Admin" : member.role}
                     </Badge>
                   </div>
                 </div>
@@ -231,7 +232,7 @@ const StaffManagement = () => {
                     size="sm"
                     className="text-destructive hover:text-destructive"
                     onClick={() => setDeletingId(member.id)}
-                    disabled={member.role === "admin" && staff.filter(s => s.role === "admin").length <= 1}
+                    disabled={member.role === "super_admin"}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
@@ -268,11 +269,12 @@ const StaffManagement = () => {
             )}
             <div className="space-y-1.5">
               <Label>Role</Label>
-              <Select value={draft.role} onValueChange={(v: "admin" | "staff") => setDraft({ ...draft, role: v })}>
+              <Select value={draft.role} onValueChange={(v: "super_admin" | "admin" | "staff") => setDraft({ ...draft, role: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="staff">Staff</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="super_admin">⚡ Super Admin</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -303,9 +305,9 @@ const StaffManagement = () => {
           </DialogHeader>
           {editingStaff && (
             <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-              {editingStaff.role === "admin" && (
+              {(editingStaff.role === "admin" || editingStaff.role === "super_admin") && (
                 <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-                  Admins automatically have access to all modules.
+                  {editingStaff.role === "super_admin" ? "Super admins have full access to everything." : "Admins automatically have access to all modules."}
                 </p>
               )}
             {ALL_MODULES.map((mod) => {

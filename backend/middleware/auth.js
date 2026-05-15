@@ -23,6 +23,9 @@ const authenticate = async (req, res, next) => {
 };
 
 const requireRole = (...roles) => (req, res, next) => {
+
+  // super_admin passes all role checks
+  if (req.user.role === 'super_admin') return next();
   if (!roles.includes(req.user.role)) {
     return res.status(403).json({ error: 'Insufficient permissions' });
   }
@@ -30,7 +33,7 @@ const requireRole = (...roles) => (req, res, next) => {
 };
 
 const requireModule = (module) => async (req, res, next) => {
-  if (req.user.role === 'admin') return next();
+  if (req.user.role === 'super_admin' || req.user.role === 'admin') return next();
   const [perms] = await pool.query(
     'SELECT has_access FROM staff_permissions WHERE user_id = ? AND module = ?',
     [req.user.id, module]

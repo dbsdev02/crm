@@ -22,18 +22,21 @@ async function seed() {
     console.log('✅ Migration applied');
 
     // Fix passwords
-    const adminHash = await bcrypt.hash('admin123', 10);
-    const staffHash = await bcrypt.hash('staff123', 10);
-    const userHash = await bcrypt.hash('user123', 10);
+    const adminHash      = await bcrypt.hash('admin123', 10);
+    const staffHash      = await bcrypt.hash('staff123', 10);
+    const userHash       = await bcrypt.hash('user123', 10);
+    const superAdminHash = await bcrypt.hash('superadmin123', 10);
 
-    await pool.query('UPDATE users SET password = ? WHERE email = ?', [adminHash, 'admin@crm.com']);
-    await pool.query('UPDATE users SET password = ? WHERE email = ?', [staffHash, 'staff@crm.com']);
-    await pool.query('UPDATE users SET password = ? WHERE email = ?', [userHash, 'client@crm.com']);
+    await pool.query('UPDATE users SET password = ? WHERE email = ?', [adminHash,      'admin@crm.com']);
+    await pool.query('UPDATE users SET password = ? WHERE email = ?', [staffHash,      'staff@crm.com']);
+    await pool.query('UPDATE users SET password = ? WHERE email = ?', [userHash,       'client@crm.com']);
+    await pool.query('UPDATE users SET password = ? WHERE email = ?', [superAdminHash, 'superadmin@crm.com']);
 
     console.log('✅ Passwords updated');
-    console.log('   admin@crm.com   → admin123');
-    console.log('   staff@crm.com   → staff123');
-    console.log('   client@crm.com  → user123');
+    console.log('   admin@crm.com       → admin123');
+    console.log('   staff@crm.com       → staff123');
+    console.log('   client@crm.com      → user123');
+    console.log('   superadmin@crm.com  → superadmin123');
     process.exit(0);
   } catch (err) {
     console.error('❌ Error:', err.message);

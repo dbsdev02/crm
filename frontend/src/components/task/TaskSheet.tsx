@@ -95,13 +95,14 @@ export function TaskSheet({
   useEffect(() => {
     if (!smartMode || !debouncedInput.trim()) {
       setParsed(null);
+      setForm((f) => ({ ...f, deadline: "", priority: "medium", labels: [], recurring: null, reminder_offset_min: null }));
       return;
     }
     const result = parseTask(debouncedInput);
     setParsed(result);
     setForm((f) => ({
       ...f,
-      deadline: result.due_date ?? f.deadline,
+      deadline: result.due_date ?? "",
       priority: result.priority,
       labels: result.labels.length > 0 ? result.labels : f.labels,
       recurring: result.recurring,

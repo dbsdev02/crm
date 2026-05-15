@@ -33,13 +33,12 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Plus,
   MessageSquare,
-  GripVertical,
   Building,
   Mail,
   Phone,
   DollarSign,
-  Pencil,
   Trash2,
+  ChevronRight,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -85,20 +84,15 @@ const Leads = () => {
     assignedTo: String(l.assigned_to || ""), value: Number(l.value) || 0,
     comments: [], createdAt: l.created_at?.split("T")[0] || "", custom: l.custom_fields ? JSON.parse(l.custom_fields) : {},
   }));
-  const [commentModal, setCommentModal] = useState<{ lead: Lead; newStage: LeadStage } | null>(null);
-  const [comment, setComment] = useState("");
   const [detailLead, setDetailLead] = useState<Lead | null>(null);
-  const [draggedLead, setDraggedLead] = useState<Lead | null>(null);
+  const [detailForm, setDetailForm] = useState<LeadForm & { comment: string }>({
+    ...emptyForm, comment: "",
+  });
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<LeadForm>(emptyForm);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { toast } = useToast();
-
-  const isFieldEnabled = (key: string) =>
-    builtIn.find((b) => b.key === key)?.enabled ?? true;
-  const isFieldRequired = (key: string) =>
-    builtIn.find((b) => b.key === key)?.required ?? false;
 
   const openAdd = () => {
     setEditingId(null);
@@ -106,9 +100,9 @@ const Leads = () => {
     setEditorOpen(true);
   };
 
-  const openEdit = (lead: Lead) => {
-    setEditingId(lead.id);
-    setForm({
+  const openDetail = (lead: Lead) => {
+    setDetailLead(lead);
+    setDetailForm({
       name: lead.name,
       company: lead.company,
       email: lead.email,
@@ -116,14 +110,13 @@ const Leads = () => {
       value: String(lead.value),
       stage: lead.stage,
       custom: { ...(lead.custom ?? {}) },
+      comment: "",
     });
-    setDetailLead(null);
-    setEditorOpen(true);
   };
 
   const saveMutation = useMutation({
-    mutationFn: (payload: any) => editingId
-      ? api.put(`/leads/${editingId}`, payload)
+    mutationFn: ({ id, payload }: { id: string | null; payload: any }) => id
+      ? api.put(`/leads/${id}`, payload)
       : api.post("/leads", payload),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["leads"] }); toast({ title: editingId ? "Lead updated" : "Lead added" }); },
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -153,9 +146,12 @@ const Leads = () => {
       }
     }
     saveMutation.mutate({
-      name: form.name, company: form.company, email: form.email, phone: form.phone,
-      value: Number(form.value) || 0, stage: stageToApi[form.stage],
-      custom_fields: JSON.stringify(form.custom),
+      id: editingId,
+      payload: {
+        name: form.name, company: form.company, email: form.email, phone: form.phone,
+        value: Number(form.value) || 0, stage: stageToApi[form.stage],
+        custom_fields: JSON.stringify(form.custom),
+      },
     });
     setEditorOpen(false); setForm(emptyForm); setEditingId(null);
   };
@@ -166,24 +162,31 @@ const Leads = () => {
     setDeleteId(null); setDetailLead(null);
   };
 
-  const handleDragStart = (lead: Lead) => setDraggedLead(lead);
-
-  const handleDrop = (stage: LeadStage) => {
-    if (!draggedLead || draggedLead.stage === stage) {
-      setDraggedLead(null);
-      return;
+  const saveDetail = async () => {
+    if (!detailLead) return;
+    const stageChanged = detailForm.stage !== detailLead.stage;
+    if (stageChanged && !detailForm.comment.trim()) {
+      toast({ title: "Comment required", description: "Add a comment when changing stage.", variant: "destructive" }); return;
     }
-    setCommentModal({ lead: draggedLead, newStage: stage });
-    setDraggedLead(null);
-  };
-
-  const handleStageChange = () => {
-    if (!commentModal || !comment.trim()) {
-      toast({ title: "Comment required", description: "You must add a comment when changing lead stage.", variant: "destructive" }); return;
+    // update lead info
+    await saveMutation.mutateAsync({
+      id: detailLead.id,
+      payload: {
+        name: detailForm.name, company: detailForm.company, email: detailForm.email,
+        phone: detailForm.phone, value: Number(detailForm.value) || 0,
+        stage: stageToApi[detailForm.stage], custom_fields: JSON.stringify(detailForm.custom),
+      },
+    });
+    // if stage changed, also call stage endpoint with comment
+    if (stageChanged) {
+      await stageMutation.mutateAsync({
+        id: detailLead.id,
+        stage: stageToApi[detailForm.stage],
+        comment: detailForm.comment.trim(),
+      });
     }
-    stageMutation.mutate({ id: commentModal.lead.id, stage: stageToApi[commentModal.newStage], comment });
-    toast({ title: "Lead updated", description: `${commentModal.lead.name} moved to ${LEAD_STAGES.find((s) => s.key === commentModal.newStage)?.label}` });
-    setComment(""); setCommentModal(null);
+    toast({ title: "Lead saved" });
+    setDetailLead(null);
   };
 
   const stageColorMap: Record<LeadStage, string> = {
@@ -194,6 +197,16 @@ const Leads = () => {
     negotiation: "bg-lead-negotiation",
     uninterested: "bg-lead-uninterested",
     onboarded: "bg-lead-onboarded",
+  };
+
+  const stageBadgeColor: Record<LeadStage, string> = {
+    contacted: "bg-slate-100 text-slate-700",
+    interested: "bg-blue-100 text-blue-700",
+    meeting: "bg-indigo-100 text-indigo-700",
+    followup: "bg-yellow-100 text-yellow-700",
+    negotiation: "bg-orange-100 text-orange-700",
+    uninterested: "bg-red-100 text-red-700",
+    onboarded: "bg-green-100 text-green-700",
   };
 
   return (
@@ -213,12 +226,7 @@ const Leads = () => {
         {LEAD_STAGES.map((stage) => {
           const stageLeads = leads.filter((l) => l.stage === stage.key);
           return (
-            <div
-              key={stage.key}
-              className="min-w-[280px] flex-shrink-0"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => handleDrop(stage.key)}
-            >
+            <div key={stage.key} className="min-w-[280px] flex-shrink-0">
               <div className="rounded-lg border border-border bg-muted/30">
                 <div className="flex items-center gap-2 p-3 border-b border-border">
                   <div className={`h-3 w-3 rounded-full ${stageColorMap[stage.key]}`} />
@@ -229,10 +237,8 @@ const Leads = () => {
                   {stageLeads.map((lead) => (
                     <Card
                       key={lead.id}
-                      draggable
-                      onDragStart={() => handleDragStart(lead)}
-                      className="cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
-                      onClick={() => setDetailLead(lead)}
+                      className="cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => openDetail(lead)}
                     >
                       <CardContent className="p-3 space-y-2">
                         <div className="flex items-start justify-between">
@@ -240,7 +246,7 @@ const Leads = () => {
                             <p className="text-sm font-medium">{lead.name}</p>
                             <p className="text-xs text-muted-foreground">{lead.company}</p>
                           </div>
-                          <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -262,80 +268,105 @@ const Leads = () => {
         })}
       </div>
 
-      {/* Mandatory Comment Modal */}
-      <Dialog open={!!commentModal} onOpenChange={() => { setCommentModal(null); setComment(""); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Stage Change Comment (Required)</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Moving <strong>{commentModal?.lead.name}</strong> to{" "}
-              <strong>{LEAD_STAGES.find((s) => s.key === commentModal?.newStage)?.label}</strong>
-            </p>
-            <div className="space-y-2">
-              <Label htmlFor="comment">Comment *</Label>
-              <Textarea
-                id="comment"
-                placeholder="Add a comment about this stage change..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="min-h-[100px]"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setCommentModal(null); setComment(""); }}>Cancel</Button>
-            <Button onClick={handleStageChange} disabled={!comment.trim()}>Save Change</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Lead Detail Modal */}
+      {/* Lead Detail / Edit Modal */}
       <Dialog open={!!detailLead} onOpenChange={(o) => !o && setDetailLead(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{detailLead?.name}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              {detailLead?.name}
+              {detailLead && (
+                <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${stageBadgeColor[detailLead.stage]}`}>
+                  {LEAD_STAGES.find((s) => s.key === detailLead.stage)?.label}
+                </span>
+              )}
+            </DialogTitle>
           </DialogHeader>
           {detailLead && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-2"><Building className="h-4 w-4 text-muted-foreground" />{detailLead.company}</div>
-                <div className="flex items-center gap-2"><Mail className="h-4 w-4 text-muted-foreground" />{detailLead.email}</div>
-                <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" />{detailLead.phone}</div>
-                <div className="flex items-center gap-2"><DollarSign className="h-4 w-4 text-muted-foreground" />${detailLead.value.toLocaleString()}</div>
-              </div>
-              {customFields.length > 0 && detailLead.custom && (
-                <div className="grid grid-cols-2 gap-3 text-sm rounded-md border border-border p-3 bg-muted/30">
-                  {customFields.map((cf) => (
-                    <div key={cf.id}>
-                      <p className="text-xs text-muted-foreground">{cf.label}</p>
-                      <p className="font-medium">{detailLead.custom?.[cf.key] || "—"}</p>
+            <div className="space-y-4 max-h-[70vh] overflow-y-auto px-[2px]">
+
+              {/* Editable fields */}
+              <div className="grid grid-cols-2 gap-3">
+                {builtIn.filter((f) => f.enabled && f.key !== "stage").map((f) => {
+                  const inputType = f.key === "email" ? "email" : f.key === "value" ? "number" : f.key === "phone" ? "tel" : "text";
+                  return (
+                    <div key={f.key} className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">{f.label}</Label>
+                      <Input
+                        type={inputType}
+                        value={(detailForm as any)[f.key] ?? ""}
+                        onChange={(e) => setDetailForm({ ...detailForm, [f.key]: e.target.value })}
+                        className="h-8 text-sm"
+                      />
                     </div>
-                  ))}
-                </div>
-              )}
-              <div>
-                <h4 className="text-sm font-medium mb-2">Comment History</h4>
-                <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                  {detailLead.comments.map((c, i) => (
-                    <div key={i} className="rounded-lg bg-muted p-3 text-sm">
-                      <p>{c.text}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{c.author} • {c.date} • <span className="capitalize">{c.stage}</span></p>
-                    </div>
-                  ))}
-                </div>
+                  );
+                })}
+                {customFields.map((cf) => (
+                  <div key={cf.id} className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">{cf.label}</Label>
+                    {cf.type === "select" ? (
+                      <Select value={detailForm.custom[cf.key] ?? ""} onValueChange={(v) => setDetailForm({ ...detailForm, custom: { ...detailForm.custom, [cf.key]: v } })}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>{(cf.options ?? []).map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        type={cf.type}
+                        value={detailForm.custom[cf.key] ?? ""}
+                        onChange={(e) => setDetailForm({ ...detailForm, custom: { ...detailForm.custom, [cf.key]: e.target.value } })}
+                        className="h-8 text-sm"
+                      />
+                    )}
+                  </div>
+                ))}
               </div>
-              <div className="flex justify-end gap-2 pt-2 border-t border-border">
-                <Button variant="outline" size="sm" onClick={() => openEdit(detailLead)}>
-                  <Pencil className="mr-2 h-4 w-4" /> Edit
-                </Button>
-                <Button variant="destructive" size="sm" onClick={() => setDeleteId(detailLead.id)}>
-                  <Trash2 className="mr-2 h-4 w-4" /> Delete
-                </Button>
+
+              {/* Move to stage */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Move to Stage</Label>
+                <Select
+                  value={detailForm.stage}
+                  onValueChange={(v) => setDetailForm({ ...detailForm, stage: v as LeadStage, comment: "" })}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LEAD_STAGES.map((s) => (
+                      <SelectItem key={s.key} value={s.key}>
+                        <div className="flex items-center gap-2">
+                          <div className={`h-2 w-2 rounded-full ${stageColorMap[s.key]}`} />
+                          {s.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
+              {/* Comment — required only if stage changed */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">
+                  Comment {detailForm.stage !== detailLead.stage ? <span className="text-red-500">* (required for stage change)</span> : "(optional)"}
+                </Label>
+                <Textarea
+                  placeholder="Add a note about this update…"
+                  value={detailForm.comment}
+                  onChange={(e) => setDetailForm({ ...detailForm, comment: e.target.value })}
+                  className="min-h-[80px] text-sm"
+                />
+              </div>
+
             </div>
           )}
+          <DialogFooter className="flex items-center justify-between gap-2">
+            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(detailLead!.id)}>
+              <Trash2 className="h-4 w-4 mr-1" /> Delete
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setDetailLead(null)}>Cancel</Button>
+              <Button onClick={saveDetail} disabled={saveMutation.isPending || stageMutation.isPending}>Save</Button>
+            </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

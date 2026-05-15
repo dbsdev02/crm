@@ -25,7 +25,6 @@ import PlaceholderPage from "@/pages/PlaceholderPage";
 import Reports from "@/pages/Reports";
 import NotFound from "@/pages/NotFound";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
-import LandingPage from "@/pages/LandingPage";
 
 const queryClient = new QueryClient();
 
@@ -46,23 +45,22 @@ const App = () => (
             <CustomersProvider>
             <BrowserRouter>
               <Routes>
-                <Route path="/landing" element={<LandingPage />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/" element={<ProtectedLayout><Index /></ProtectedLayout>} />
-                <Route path="/leads" element={<ProtectedLayout allowedRoles={["admin", "staff"]}><Leads /></ProtectedLayout>} />
-                <Route path="/customers" element={<ProtectedLayout allowedRoles={["admin", "staff"]}><Customers /></ProtectedLayout>} />
+                <Route path="/leads" element={<ProtectedLayout allowedRoles={["super_admin", "admin", "staff"]}><Leads /></ProtectedLayout>} />
+                <Route path="/customers" element={<ProtectedLayout allowedRoles={["super_admin", "admin", "staff"]}><Customers /></ProtectedLayout>} />
                 <Route path="/tasks" element={<ProtectedLayout><Tasks /></ProtectedLayout>} />
                 <Route path="/projects" element={<ProtectedLayout><Projects /></ProtectedLayout>} />
                 <Route path="/projects/:id" element={<ProtectedLayout><ProjectDetails /></ProtectedLayout>} />
                 <Route path="/calendar" element={<ProtectedLayout><CalendarView /></ProtectedLayout>} />
-                <Route path="/staff" element={<ProtectedLayout allowedRoles={["admin"]}><StaffManagement /></ProtectedLayout>} />
-                <Route path="/logs" element={<ProtectedLayout allowedRoles={["admin"]}><Logs /></ProtectedLayout>} />
-                <Route path="/credits" element={<ProtectedLayout allowedRoles={["admin", "staff"]}><Credits /></ProtectedLayout>} />
-                <Route path="/social-media" element={<ProtectedLayout allowedRoles={["admin", "staff"]}><PlaceholderPage title="Social Media Activities" description="Manage client social media calendars" /></ProtectedLayout>} />
-                <Route path="/seo" element={<ProtectedLayout allowedRoles={["admin", "staff"]}><PlaceholderPage title="SEO Activities" description="Track SEO plans and performance" /></ProtectedLayout>} />
-                <Route path="/reports" element={<ProtectedLayout allowedRoles={["admin", "staff"]}><Reports /></ProtectedLayout>} />
-                <Route path="/settings" element={<ProtectedLayout allowedRoles={["admin"]}><Settings /></ProtectedLayout>} />
+                <Route path="/staff" element={<ProtectedLayout allowedRoles={["super_admin", "admin"]}><StaffManagement /></ProtectedLayout>} />
+                <Route path="/logs" element={<ProtectedLayout allowedRoles={["super_admin", "admin"]}><Logs /></ProtectedLayout>} />
+                <Route path="/credits" element={<ProtectedLayout allowedRoles={["super_admin", "admin", "staff"]}><Credits /></ProtectedLayout>} />
+                <Route path="/social-media" element={<ProtectedLayout allowedRoles={["super_admin", "admin", "staff"]}><PlaceholderPage title="Social Media Activities" description="Manage client social media calendars" /></ProtectedLayout>} />
+                <Route path="/seo" element={<ProtectedLayout allowedRoles={["super_admin", "admin", "staff"]}><PlaceholderPage title="SEO Activities" description="Track SEO plans and performance" /></ProtectedLayout>} />
+                <Route path="/reports" element={<ProtectedLayout allowedRoles={["super_admin", "admin", "staff"]}><Reports /></ProtectedLayout>} />
+                <Route path="/settings" element={<ProtectedLayout allowedRoles={["super_admin", "admin"]}><Settings /></ProtectedLayout>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
