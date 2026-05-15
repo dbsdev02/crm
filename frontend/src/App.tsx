@@ -25,6 +25,7 @@ import PlaceholderPage from "@/pages/PlaceholderPage";
 import Reports from "@/pages/Reports";
 import NotFound from "@/pages/NotFound";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import LandingPage from "@/pages/LandingPage";
 
 const queryClient = new QueryClient();
 
@@ -45,9 +46,10 @@ const App = () => (
             <CustomersProvider>
             <BrowserRouter>
               <Routes>
+                <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                <Route path="/" element={<ProtectedLayout><Index /></ProtectedLayout>} />
+                <Route path="/dashboard" element={<ProtectedLayout><Index /></ProtectedLayout>} />
                 <Route path="/leads" element={<ProtectedLayout allowedRoles={["super_admin", "admin", "staff"]}><Leads /></ProtectedLayout>} />
                 <Route path="/customers" element={<ProtectedLayout allowedRoles={["super_admin", "admin", "staff"]}><Customers /></ProtectedLayout>} />
                 <Route path="/tasks" element={<ProtectedLayout><Tasks /></ProtectedLayout>} />

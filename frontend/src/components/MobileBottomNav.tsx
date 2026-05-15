@@ -28,7 +28,7 @@ export const MobileBottomNav = () => {
   };
 
   const moreLinks = [
-    { title: "Dashboard",  url: "/",             icon: MoreHorizontal, roles: ["admin", "staff", "user"] },
+    { title: "Dashboard",  url: "/dashboard",    icon: MoreHorizontal, roles: ["admin", "staff", "user", "super_admin"] },
     { title: "Leads",      url: "/leads",         icon: Target,         roles: ["admin", "staff"] },
     { title: "Customers",  url: "/customers",     icon: Contact,        roles: ["admin", "staff"] },
     { title: "Calendar",   url: "/calendar",      icon: Calendar,       roles: ["admin", "staff", "user"] },

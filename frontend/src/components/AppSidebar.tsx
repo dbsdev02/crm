@@ -37,7 +37,7 @@ const taskViews: NavItem[] = [
 ];
 
 const mainNav: NavItem[] = [
-  { title: "Dashboard", url: "/",         icon: LayoutDashboard, roles: ["super_admin", "admin", "staff", "user"] },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, roles: ["super_admin", "admin", "staff", "user"] },
   { title: "Leads",     url: "/leads",    icon: Target,          roles: ["super_admin", "admin", "staff"] },
   { title: "Customers", url: "/customers",icon: Contact,         roles: ["super_admin", "admin", "staff"] },
   { title: "Projects",  url: "/projects", icon: FolderOpen,      roles: ["super_admin", "admin", "staff", "user"] },
@@ -109,7 +109,7 @@ export function AppSidebar() {
         <SidebarMenuButton asChild>
           <NavLink
             to={item.url}
-            end={item.url === "/"}
+            end={item.url === "/dashboard"}
             className="hover:bg-sidebar-accent"
             activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
           >
