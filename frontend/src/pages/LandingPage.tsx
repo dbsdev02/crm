@@ -3,6 +3,8 @@ import {
   ArrowRight, Sparkles, KanbanSquare, ListChecks, FolderKanban,
   BarChart3, CalendarDays, Bell, ShieldCheck, Smartphone, Video,
   Bot, Zap, Users, Workflow, Check, Star, Globe,
+  GripVertical, DollarSign, MessageSquare, ChevronRight,
+  Flag, Tag, CheckCircle2, Clock, AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,16 +14,16 @@ import heroImg from "@/assets/dashboard-hero.jpg";
 
 const features = [
   { icon: KanbanSquare, title: "Lead Management Kanban", desc: "Drag-and-drop pipeline to move leads from cold to closed without a spreadsheet in sight." },
-  { icon: ListChecks,   title: "Smart Task Management", desc: "AI prioritizes, assigns and reminds — so the right work happens at the right time." },
+  { icon: ListChecks,   title: "Smart Task Management", desc: "Intelligence prioritizes, assigns and reminds — so the right work happens at the right time." },
   { icon: FolderKanban, title: "Project Tracking",       desc: "Milestones, sprints and dependencies in one calm, focused workspace." },
   { icon: BarChart3,    title: "Team Performance Reports", desc: "Live dashboards reveal who's winning, what's stuck, and where to invest next." },
   { icon: CalendarDays, title: "Calendar & Meetings",    desc: "Unified schedule with Google Meet, reminders and round-robin booking." },
   { icon: Bell,         title: "Smart Notifications",    desc: "Granular alerts across email, push and in-app — right channel, right moment." },
-  { icon: Zap,          title: "Credits System",         desc: "Built-in credits for usage-based workflows, billing and AI consumption." },
+  { icon: Zap,          title: "Credits System",         desc: "Built-in credits for usage-based workflows, billing and intelligence consumption." },
   { icon: ShieldCheck,  title: "Staff Permissions",      desc: "Role-based access control with audit trails for every sensitive action." },
   { icon: Smartphone,   title: "Mobile CRM Support",     desc: "Native iOS & Android CRM so your team works from anywhere." },
   { icon: Video,        title: "Google Meet Integration", desc: "Spin up meetings from a lead, contact or task in a single click." },
-  { icon: Bot,          title: "AI Automation",          desc: "Automate follow-ups, summaries and pipeline hygiene with custom AI agents." },
+  { icon: Bot,          title: "Intelligence Automation", desc: "Automate follow-ups, summaries and pipeline hygiene with custom intelligence agents." },
 ];
 
 const workflow = [
@@ -35,7 +37,7 @@ const workflow = [
 
 const reasons = [
   { icon: Zap,         title: "Blazing Fast",            desc: "Sub-100ms interactions across the whole product." },
-  { icon: Bot,         title: "AI-powered",              desc: "Built-in agents draft, summarize and follow up." },
+  { icon: Bot,         title: "Intelligence-powered",    desc: "Built-in agents draft, summarize and follow up." },
   { icon: Smartphone,  title: "Mobile Friendly",         desc: "Pixel-perfect on every device, online or off." },
   { icon: ShieldCheck, title: "Role-based Access",       desc: "SOC2-ready permissions out of the box." },
   { icon: Users,       title: "Real-time Collaboration", desc: "Live cursors, mentions and inline comments." },
@@ -49,18 +51,18 @@ const plans = [
   },
   {
     name: "Professional", price: "₹2,499", desc: "Everything growing teams need to scale revenue.",
-    features: ["Unlimited users", "AI automation & reports", "Google Meet integration", "Role-based access", "Priority support"],
+    features: ["Unlimited users", "Intelligence automation & reports", "Google Meet integration", "Role-based access", "Priority support"],
     highlighted: true,
   },
   {
     name: "Enterprise", price: "Custom", desc: "Advanced governance and a dedicated success manager.",
-    features: ["SSO & SCIM", "Custom AI agents", "Audit logs & SLAs", "Dedicated CSM", "On-prem option"],
+    features: ["SSO & SCIM", "Custom intelligence agents", "Audit logs & SLAs", "Dedicated CSM", "On-prem option"],
   },
 ];
 
 const testimonials = [
   { name: "Sara Lindqvist", role: "Head of Sales, Northwind",  quote: "We replaced three tools with Internal and our reps actually want to log in. Pipeline visibility went from weekly to real-time." },
-  { name: "Marcus Chen",    role: "COO, Fieldscale",           quote: "The AI follow-ups alone closed deals we would have lost. Setup took an afternoon, not a quarter." },
+  { name: "Marcus Chen",    role: "COO, Fieldscale",           quote: "The intelligence follow-ups alone closed deals we would have lost. Setup took an afternoon, not a quarter." },
   { name: "Priya Raman",    role: "Founder, Loophaus",         quote: "Beautiful product, ridiculous depth. Tasks, projects, meetings and reporting all finally living together." },
 ];
 
@@ -86,10 +88,12 @@ function Nav() {
             <span className="text-[#1a1a2e]">Internal</span>
           </a>
           <div className="hidden md:flex items-center gap-8 text-sm text-gray-500">
-            <a href="#features" className="hover:text-gray-900 transition-colors">Features</a>
-            <a href="#workflow" className="hover:text-gray-900 transition-colors">Workflow</a>
-            <a href="#pricing" className="hover:text-gray-900 transition-colors">Pricing</a>
-            <a href="#faq"      className="hover:text-gray-900 transition-colors">FAQ</a>
+            <a href="#features"   className="hover:text-gray-900 transition-colors">Features</a>
+            <a href="#leads-demo" className="hover:text-gray-900 transition-colors">Leads</a>
+            <a href="#tasks-demo" className="hover:text-gray-900 transition-colors">Tasks</a>
+            <a href="#workflow"   className="hover:text-gray-900 transition-colors">Workflow</a>
+            <a href="#pricing"    className="hover:text-gray-900 transition-colors">Pricing</a>
+            <a href="#faq"        className="hover:text-gray-900 transition-colors">FAQ</a>
           </div>
           <div className="flex items-center gap-2">
             <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
@@ -112,14 +116,14 @@ function Hero() {
       <div className="mx-auto max-w-7xl px-6 grid lg:grid-cols-2 gap-12 items-center">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
           <span className="inline-flex items-center gap-2 lp-glass rounded-full px-3 py-1 text-xs text-gray-500">
-            <Sparkles className="size-3 text-[#db4035]" /> AI-native CRM · v3.0
+            <Sparkles className="size-3 text-[#db4035]" /> Intelligence-native CRM · v3.0
           </span>
           <h1 className="mt-5 text-5xl md:text-6xl font-semibold tracking-tight leading-[1.05] text-[#1a1a2e]">
             Manage Leads, Tasks & Teams —{" "}
             <span className="lp-text-gradient">All in One CRM</span>
           </h1>
           <p className="mt-6 text-lg text-gray-500 max-w-xl">
-            An AI-powered CRM with task management, projects, meetings, reports, staff
+            An Intelligence-powered CRM with task management, projects, meetings, reports, staff
             management, credits and automation — built for teams that grow.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -211,6 +215,93 @@ function WorkflowSection() {
               {i < workflow.length - 1 && <ArrowRight className="size-4 text-gray-400 hidden md:block" />}
             </div>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const demoLeads = [
+  { name: "Acme Corp",      value: "₹1,20,000", stage: "Proposal",    tag: "Hot",  tagColor: "text-red-500 bg-red-50" },
+  { name: "Brightline Inc", value: "₹85,000",   stage: "Negotiation", tag: "Warm", tagColor: "text-orange-500 bg-orange-50" },
+  { name: "Vector Labs",    value: "₹2,40,000", stage: "Qualified",   tag: "Hot",  tagColor: "text-red-500 bg-red-50" },
+  { name: "Helix Systems",  value: "₹60,000",   stage: "New",         tag: "Cold", tagColor: "text-blue-500 bg-blue-50" },
+];
+
+const demoTasks = [
+  { title: "Follow up with Acme Corp",      due: "Today",    priority: "High",   icon: AlertTriangle, iconColor: "text-red-500" },
+  { title: "Send proposal to Brightline",   due: "Tomorrow", priority: "Medium", icon: Clock,         iconColor: "text-orange-400" },
+  { title: "Schedule demo for Vector Labs", due: "Jun 12",   priority: "High",   icon: AlertTriangle, iconColor: "text-red-500" },
+  { title: "Update CRM notes — Helix",      due: "Jun 14",   priority: "Low",    icon: CheckCircle2,  iconColor: "text-green-500" },
+];
+
+function LeadsDemo() {
+  return (
+    <section id="leads-demo" className="py-28 relative">
+      <div className="absolute inset-0 lp-gradient-hero opacity-40 pointer-events-none" />
+      <div className="mx-auto max-w-7xl px-6 relative grid lg:grid-cols-2 gap-14 items-center">
+        <div>
+          <span className="inline-flex items-center gap-2 lp-glass rounded-full px-3 py-1 text-xs text-gray-500">
+            <KanbanSquare className="size-3 text-[#db4035]" /> Lead Management
+          </span>
+          <h2 className="mt-4 text-4xl md:text-5xl font-semibold tracking-tight text-[#1a1a2e]">Your pipeline, always in view</h2>
+          <p className="mt-4 text-gray-500 text-lg">Drag-and-drop Kanban with deal values, stages and heat tags — so nothing slips through.</p>
+          <ul className="mt-6 space-y-3 text-sm text-gray-600">
+            {["Visual Kanban pipeline", "Deal value & stage tracking", "Hot / Warm / Cold tagging", "One-click lead actions"].map((item) => (
+              <li key={item} className="flex items-center gap-2"><Check className="size-4 text-[#db4035]" />{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="lp-glass rounded-2xl p-5 lp-shadow-glow space-y-3">
+          {demoLeads.map((lead) => (
+            <div key={lead.name} className="flex items-center gap-3 bg-white/60 rounded-xl px-4 py-3">
+              <GripVertical className="size-4 text-gray-300 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-[#1a1a2e] truncate">{lead.name}</div>
+                <div className="text-xs text-gray-400">{lead.stage}</div>
+              </div>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${lead.tagColor}`}>{lead.tag}</span>
+              <div className="flex items-center gap-1 text-sm font-semibold text-[#1a1a2e]">
+                <DollarSign className="size-3.5 text-[#db4035]" />{lead.value}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TasksDemo() {
+  return (
+    <section id="tasks-demo" className="py-28">
+      <div className="mx-auto max-w-7xl px-6 grid lg:grid-cols-2 gap-14 items-center">
+        <div className="lp-glass rounded-2xl p-5 lp-shadow-glow space-y-3 order-last lg:order-first">
+          {demoTasks.map((task) => (
+            <div key={task.title} className="flex items-center gap-3 bg-white/60 rounded-xl px-4 py-3">
+              <task.icon className={`size-4 shrink-0 ${task.iconColor}`} />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-[#1a1a2e] truncate">{task.title}</div>
+                <div className="text-xs text-gray-400">Due: {task.due}</div>
+              </div>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                task.priority === "High" ? "text-red-500 bg-red-50" :
+                task.priority === "Medium" ? "text-orange-500 bg-orange-50" : "text-green-600 bg-green-50"
+              }`}>{task.priority}</span>
+            </div>
+          ))}
+        </div>
+        <div>
+          <span className="inline-flex items-center gap-2 lp-glass rounded-full px-3 py-1 text-xs text-gray-500">
+            <ListChecks className="size-3 text-[#db4035]" /> Task Management
+          </span>
+          <h2 className="mt-4 text-4xl md:text-5xl font-semibold tracking-tight text-[#1a1a2e]">Tasks that keep your team on track</h2>
+          <p className="mt-4 text-gray-500 text-lg">Priority-sorted, due-date aware tasks linked directly to your leads and contacts.</p>
+          <ul className="mt-6 space-y-3 text-sm text-gray-600">
+            {["Priority levels & due dates", "Linked to leads & contacts", "Intelligence-powered reminders", "Team assignment & tracking"].map((item) => (
+              <li key={item} className="flex items-center gap-2"><Check className="size-4 text-[#db4035]" />{item}</li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>
@@ -387,6 +478,8 @@ export default function LandingPage() {
         <TrustedBy />
         <Features />
         <WorkflowSection />
+        <LeadsDemo />
+        <TasksDemo />
         <WhyChoose />
         <Pricing />
         <Testimonials />
