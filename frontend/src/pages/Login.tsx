@@ -21,7 +21,7 @@ const Login = () => {
     if (success) {
       toast({ title: "Welcome back!", description: "You have been logged in successfully." });
       const user = JSON.parse(localStorage.getItem("crm_user") || "{}");
-      navigate(user.role === "staff" ? "/tasks" : "/dashboard");
+      navigate(user.role === "staff" ? "/tasks" : user.role === "super_admin" ? "/admin" : "/dashboard");
     } else {
       toast({ title: "Login failed", description: "Invalid email or password.", variant: "destructive" });
     }

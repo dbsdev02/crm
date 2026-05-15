@@ -1,7 +1,7 @@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   LayoutDashboard, Users, Target, CheckSquare, FolderOpen, Inbox,
-  Calendar, FileText, Award, Share2, Search, Settings, LogOut, Activity, Contact, Plus, X, ChevronRight, CalendarDays,
+  Calendar, FileText, Award, Share2, Search, Settings, LogOut, Activity, Contact, Plus, X, ChevronRight, CalendarDays, ShieldCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -282,6 +282,28 @@ export function AppSidebar() {
             <SidebarGroupLabel className="text-sidebar-foreground/60">Admin</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>{renderItems(filterByRole(adminNav))}</SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Super Admin Panel link */}
+        {user?.role === "super_admin" && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/admin"
+                      className="hover:bg-sidebar-accent text-[13px] text-[#db4035] font-medium"
+                      activeClassName="bg-sidebar-accent font-semibold"
+                    >
+                      <ShieldCheck className="mr-2 h-4 w-4 shrink-0 text-[#db4035]" />
+                      {!collapsed && <span>Super Admin Panel</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}

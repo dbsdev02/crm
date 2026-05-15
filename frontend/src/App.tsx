@@ -26,6 +26,20 @@ import Reports from "@/pages/Reports";
 import NotFound from "@/pages/NotFound";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import LandingPage from "@/pages/LandingPage";
+import AdminLayout from "@/pages/admin/AdminLayout";
+import AdminDashboard from "@/pages/admin/Dashboard";
+import AdminUsers from "@/pages/admin/Users";
+import AdminOrganizations from "@/pages/admin/Organizations";
+import AdminWorkspaces from "@/pages/admin/Workspaces";
+import AdminBilling from "@/pages/admin/Billing";
+import AdminAnalytics from "@/pages/admin/Analytics";
+import AdminAutomations from "@/pages/admin/Automations";
+import AdminRoles from "@/pages/admin/Roles";
+import AdminActivityLogs from "@/pages/admin/ActivityLogs";
+import AdminNotifications from "@/pages/admin/Notifications";
+import AdminAISettings from "@/pages/admin/AISettings";
+import AdminSettings from "@/pages/admin/Settings";
+import AdminSupport from "@/pages/admin/SupportCenter";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +77,22 @@ const App = () => (
                 <Route path="/seo" element={<ProtectedLayout allowedRoles={["super_admin", "admin", "staff"]}><PlaceholderPage title="SEO Activities" description="Track SEO plans and performance" /></ProtectedLayout>} />
                 <Route path="/reports" element={<ProtectedLayout allowedRoles={["super_admin", "admin", "staff"]}><Reports /></ProtectedLayout>} />
                 <Route path="/settings" element={<ProtectedLayout allowedRoles={["super_admin", "admin"]}><Settings /></ProtectedLayout>} />
+                {/* Super Admin routes */}
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="organizations" element={<AdminOrganizations />} />
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route path="workspaces" element={<AdminWorkspaces />} />
+                  <Route path="billing" element={<AdminBilling />} />
+                  <Route path="analytics" element={<AdminAnalytics />} />
+                  <Route path="automations" element={<AdminAutomations />} />
+                  <Route path="roles" element={<AdminRoles />} />
+                  <Route path="logs" element={<AdminActivityLogs />} />
+                  <Route path="notifications" element={<AdminNotifications />} />
+                  <Route path="ai-settings" element={<AdminAISettings />} />
+                  <Route path="settings" element={<AdminSettings />} />
+                  <Route path="support" element={<AdminSupport />} />
+                </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
